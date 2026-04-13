@@ -255,9 +255,9 @@ export default function DesignGenerator() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {(generateMutation.data.designs || []).map((design: any) => (
                 <Card
-                  key={design.id}
+                  key={design.databaseId}
                   className="bg-slate-800 border-slate-700 hover:border-emerald-500 transition-colors cursor-pointer group"
-                  onClick={() => setLocation(`/projects/${projectIdNum}/design/${design.id}`)}
+                  onClick={() => setLocation(`/projects/${projectIdNum}/design/${design.databaseId}`)}
                 >
                   <div className="p-6">
                     <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors mb-2">
@@ -287,7 +287,7 @@ export default function DesignGenerator() {
                       className="w-full bg-emerald-500 hover:bg-emerald-600"
                       onClick={(e: any) => {
                         e.stopPropagation();
-                        setLocation(`/projects/${projectIdNum}/design/${design.id}`);
+                        setLocation(`/projects/${projectIdNum}/design/${design.databaseId}`);
                       }}
                     >
                       <Check className="w-4 h-4 mr-2" />

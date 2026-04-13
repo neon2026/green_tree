@@ -121,3 +121,11 @@
 - [x] 图片转换为可编辑参数的逻辑（不同格式调用不同的解析器）
 - [x] 前端上传组件支持多格式（accept=.dwg,.dxf,.jpg,.jpeg,.png）
 - [x] 后端文件类型验证更新（parseCADFile根据文件扩展名判断）
+
+
+## Bug修复
+
+### DesignGenerator点击查看详情报错
+- [x] 修复方案详情页面参数验证问题（使用databaseId代替id）
+- [x] 检查DesignGenerator中的导航参数
+- [x] 验证DesignDetail页面的参数解析
