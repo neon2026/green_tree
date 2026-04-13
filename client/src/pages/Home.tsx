@@ -3,13 +3,19 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Sparkles, Zap, Palette, BarChart3 } from "lucide-react";
 import { getLoginUrl } from "@/const";
+import { useEffect } from "react";
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation("/dashboard");
+    }
+  }, [isAuthenticated, setLocation]);
+
   if (isAuthenticated) {
-    setLocation("/dashboard");
     return null;
   }
 

@@ -129,3 +129,8 @@
 - [x] 修复方案详情页面参数验证问题（使用databaseId代替id）
 - [x] 检查DesignGenerator中的导航参数
 - [x] 验证DesignDetail页面的参数解析
+
+
+### React错误修复
+- [x] 修复DesignDetail中的聊天消息key错误（使用字符串ID+index）
+- [x] 修复Home组件的setState警告（使用useEffect处理重定向）

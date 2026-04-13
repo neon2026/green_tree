@@ -229,9 +229,9 @@ export default function DesignDetail() {
                     </ul>
                   </div>
                 ) : (
-                  messages.map((msg) => (
+                  messages.map((msg, index) => (
                     <div
-                      key={msg.id}
+                      key={`${msg.id}-${index}`}
                       className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
