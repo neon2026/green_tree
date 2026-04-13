@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   projects,
@@ -67,8 +67,25 @@ export async function createDesign(data: InsertDesign) {
   if (!db) throw new Error("Database not available");
   
   const result = await db.insert(designs).values(data);
-  // Drizzle MySQL返回 { insertId: number }
-  return [(result as any).insertId || 0];
+  const insertId = (result as any).insertId;
+  
+  if (insertId && insertId > 0) {
+    return [insertId];
+  }
+  
+  // 如果insertId不可用，从数据库查询最新记录
+  const newDesign = await db
+    .select()
+    .from(designs)
+    .where(eq(designs.projectId, data.projectId))
+    .orderBy((t) => desc(t.id))
+    .limit(1);
+  
+  if (newDesign.length > 0) {
+    return [newDesign[0].id];
+  }
+  
+  throw new Error("Failed to get inserted design ID");
 }
 
 export async function getDesignById(designId: number) {

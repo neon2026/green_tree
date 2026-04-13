@@ -136,3 +136,7 @@
 - [x] 修复Home组件的setState警告（使用useEffect处理重定向）
 
 - [x] 修复DesignGenerator页面缺失的useParams和useLocation导入
+
+### [object Object]路由参数错误修复
+- [x] 修复Drizzle ORM返回值格式（createProject和createDesign返回[insertId]）
+- [x] 确保路由参数正确解析为数字而不是对象
