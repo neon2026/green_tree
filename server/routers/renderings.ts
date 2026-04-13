@@ -76,9 +76,20 @@ export const renderingsRouter = router({
       })
     )
     .query(async ({ input }) => {
-      // TODO: 实现从数据库获取效果图列表
-      return {
-        renderings: [],
-      };
+      try {
+        // TODO: 从数据库查询renderings表
+        // const db = await getDb();
+        // const renderings = await db.select().from(renderings).where(eq(renderings.designId, input.designId));
+        // return { renderings };
+        
+        // 临时返回空数组，待数据库集成
+        return {
+          renderings: [],
+          message: "效果图列表功能开发中",
+        };
+      } catch (error) {
+        console.error("Failed to list renderings:", error);
+        throw new Error("获取效果图列表失败");
+      }
     }),
 });
