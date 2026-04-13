@@ -74,7 +74,9 @@ export const projectsRouter = router({
     .mutation(async ({ input }) => {
       try {
         // 解析CAD文件
-        const cadParameters = await parseCADFile(input.cadFileUrl);
+        // 从 cadFileKey 中提取文件名
+        const fileName = input.cadFileKey.split('/').pop() || 'file';
+        const cadParameters = await parseCADFile(input.cadFileUrl, fileName);
 
         // 验证参数
         const validation = validateCADParameters(cadParameters);

@@ -123,7 +123,7 @@ export default function ProjectDetail() {
           {/* CAD Upload Section */}
           <div className="lg:col-span-2">
             <Card className="bg-slate-800 border-slate-700 p-8">
-              <h2 className="text-2xl font-bold text-white mb-6">上传CAD平面图</h2>
+              <h2 className="text-2xl font-bold text-white mb-6">上传平面图</h2>
 
               <div className="space-y-6">
                 {/* File Upload Area */}
@@ -132,13 +132,13 @@ export default function ProjectDetail() {
                   onClick={() => document.getElementById("cad-file-input")?.click()}
                 >
                   <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                  <p className="text-white font-medium mb-1">点击选择CAD文件</p>
-                  <p className="text-slate-400 text-sm">支持 DWG 和 DXF 格式，最大 10MB</p>
+                  <p className="text-white font-medium mb-1">点击选择平面图文件</p>
+                  <p className="text-slate-400 text-sm">支持 DWG、DXF、JPG、PNG 格式，最大 10MB</p>
 
                   <input
                     id="cad-file-input"
                     type="file"
-                    accept=".dwg,.dxf"
+                    accept=".dwg,.dxf,.jpg,.jpeg,.png"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -171,6 +171,16 @@ export default function ProjectDetail() {
                   </div>
                 )}
 
+                {/* Format Info */}
+                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4">
+                  <p className="text-sm text-slate-300">
+                    <span className="font-semibold text">CAD格式</span>: DWG、DXF 文件将自动解析平面图参数
+                  </p>
+                  <p className="text-sm text-slate-300 mt-2">
+                    <span className="font-semibold">图片格式</span>: JPG、PNG 图片将使用OCR技术识别平面图信息
+                  </p>
+                </div>
+
                 {/* Upload Button */}
                 <Button
                   onClick={handleCADUpload}
@@ -183,7 +193,7 @@ export default function ProjectDetail() {
                       上传中...
                     </>
                   ) : (
-                    "上传并解析CAD文件"
+                    "上传并解析平面图"
                   )}
                 </Button>
               </div>
