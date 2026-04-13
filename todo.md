@@ -42,9 +42,9 @@
 ### 6. 项目管理功能
 - [x] 项目创建与保存（projects路由）
 - [x] 项目列表展示（Dashboard页面）
-- [x] 历史版本管理（designs表）
-- [ ] 方案对比功能（待实现）
-- [x] 项目删除与恢复（deleteProject接口）
+- [x] 历史方案版本管理（designs表）
+- [x] 方案对比功能（CompareDesigns页面）
+- [x] 项目删除与恢复（Dashboard中实现）
 
 ### 7. 预算估算模块
 - [x] 材料库建立（budgetCalculator服务）
