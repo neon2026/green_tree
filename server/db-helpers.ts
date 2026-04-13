@@ -26,7 +26,8 @@ export async function createProject(data: InsertProject) {
   if (!db) throw new Error("Database not available");
   
   const result = await db.insert(projects).values(data);
-  return result;
+  // Drizzle MySQL返回 { insertId: number }
+  return [(result as any).insertId || 0];
 }
 
 export async function getProjectById(projectId: number) {
@@ -65,7 +66,9 @@ export async function createDesign(data: InsertDesign) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return await db.insert(designs).values(data);
+  const result = await db.insert(designs).values(data);
+  // Drizzle MySQL返回 { insertId: number }
+  return [(result as any).insertId || 0];
 }
 
 export async function getDesignById(designId: number) {
