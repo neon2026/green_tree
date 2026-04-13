@@ -28,11 +28,22 @@ export default function DesignDetail() {
   const [isGenerating, setIsGenerating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // State for renderings
+  const [renderings, setRenderings] = useState<Array<{ area: string; url: string }>>([
+    { area: "hall", url: "" },
+    { area: "bar", url: "" },
+    { area: "vip", url: "" },
+    { area: "gaming", url: "" },
+  ]);
+  const [isGeneratingRenderings, setIsGeneratingRenderings] = useState(false);
+
   // API Calls
   const { data: design } = trpc.designs.get.useQuery(
     { designId: designIdNum },
     { enabled: isValidDesignId }
   );
+
+  const generateRenderingsMutation = trpc.renderings.generate.useMutation();
 
   // 如果参数无效，显示错误页面
   if (!isValidProjectId || !isValidDesignId) {
@@ -64,6 +75,30 @@ export default function DesignDetail() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleGenerateRenderings = async () => {
+    if (!design) return;
+    
+    setIsGeneratingRenderings(true);
+    try {
+      const result = await generateRenderingsMutation.mutateAsync({
+        designId: designIdNum,
+      });
+      
+      if (result.success && result.renderings) {
+        setRenderings(
+          result.renderings.map((r: any) => ({
+            area: r.area,
+            url: r.url,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Failed to generate renderings:", error);
+    } finally {
+      setIsGeneratingRenderings(false);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -162,25 +197,55 @@ export default function DesignDetail() {
             </Card>
 
             {/* Renderings Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {["hall", "bar", "vip", "gaming"].map((area) => (
-                <Card
-                  key={area}
-                  className="bg-slate-800 border-slate-700 overflow-hidden hover:border-emerald-500 transition-colors"
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white">室内效果图</h2>
+                <Button
+                  onClick={handleGenerateRenderings}
+                  disabled={isGeneratingRenderings}
+                  className="bg-emerald-500 hover:bg-emerald-600"
                 >
-                  <div className="aspect-video bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
-                    <div className="text-center">
-                      <ImageIcon className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                      <p className="text-slate-400 text-sm">
-                        {area === "hall" && "大厅效果图"}
-                        {area === "bar" && "吧台效果图"}
-                        {area === "vip" && "VIP包间效果图"}
-                        {area === "gaming" && "游戏区效果图"}
-                      </p>
+                  {isGeneratingRenderings ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      生成中...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      生成效果图
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {renderings.map((rendering) => (
+                  <Card
+                    key={rendering.area}
+                    className="bg-slate-800 border-slate-700 overflow-hidden hover:border-emerald-500 transition-colors"
+                  >
+                    <div className="aspect-video bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+                      {rendering.url ? (
+                        <img
+                          src={rendering.url}
+                          alt={rendering.area}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-center">
+                          <ImageIcon className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+                          <p className="text-slate-400 text-sm">
+                            {rendering.area === "hall" && "大厅效果图"}
+                            {rendering.area === "bar" && "吧台效果图"}
+                            {rendering.area === "vip" && "VIP包间效果图"}
+                            {rendering.area === "gaming" && "游戏区效果图"}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                ))}
+              </div>
             </div>
 
             {/* Budget & Materials */}

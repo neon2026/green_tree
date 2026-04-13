@@ -140,3 +140,15 @@
 ### [object Object]路由参数错误修复
 - [x] 修复Drizzle ORM返回值格式（createProject和createDesign返回[insertId]）
 - [x] 确保路由参数正确解析为数字而不是对象
+
+- [x] 修复insertId为0导致的key重复错误（createDesign函数回退查询逻辑）
+
+
+## 当前工作项
+
+### 效果图生成实现
+- [ ] 创建renderingGenerator服务，生成效果图提示词
+- [ ] 实现图像生成API调用接口
+- [ ] 为4个核心区域生成真实效果图（大厅、吧台、VIP、游戏区）
+- [ ] 前端显示生成的效果图
+- [ ] 支持多风格效果图批量生成
