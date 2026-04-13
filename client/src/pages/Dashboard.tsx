@@ -1,10 +1,10 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Plus, Loader2, AlertCircle, Trash2, GitCompare } from "lucide-react";
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
