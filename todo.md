@@ -134,3 +134,5 @@
 ### React错误修复
 - [x] 修复DesignDetail中的聊天消息key错误（使用字符串ID+index）
 - [x] 修复Home组件的setState警告（使用useEffect处理重定向）
+
+- [x] 修复DesignGenerator页面缺失的useParams和useLocation导入
