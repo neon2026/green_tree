@@ -17,11 +17,13 @@ export default function Dashboard() {
   });
 
   const createProjectMutation = trpc.projects.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setProjectName("");
       setIsCreating(false);
       // 跳转到项目详情页
-      setLocation(`/projects/${data.projectId}`);
+      if (data && data.projectId) {
+        setLocation(`/projects/${data.projectId}`);
+      }
     },
   });
 
@@ -134,7 +136,7 @@ export default function Dashboard() {
           </div>
         ) : projects && projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
+            {projects.map((project: any) => (
               <Card
                 key={project.id}
                 className="bg-slate-800 border-slate-700 hover:border-emerald-500 transition-colors cursor-pointer group"
@@ -158,7 +160,7 @@ export default function Dashboard() {
                       size="sm"
                       variant="outline"
                       className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                      onClick={(e) => {
+                      onClick={(e: any) => {
                         e.stopPropagation();
                         setLocation(`/projects/${project.id}`);
                       }}
@@ -168,7 +170,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               </Card>
-            ))}
+            ))}  
           </div>
         ) : (
           <div className="text-center py-20">
