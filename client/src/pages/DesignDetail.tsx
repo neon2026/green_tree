@@ -187,12 +187,7 @@ export default function DesignDetail() {
                   <p className="text-xs text-slate-400 uppercase tracking-wider">预算等级</p>
                   <p className="text-white font-medium">{design.budgetRange || "未指定"}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider">造价估算</p>
-                  <p className="text-emerald-400 font-semibold">
-                    ¥490,000
-                  </p>
-                </div>
+
               </div>
             </Card>
 
@@ -248,28 +243,7 @@ export default function DesignDetail() {
               </div>
             </div>
 
-            {/* Budget & Materials */}
-            <Card className="bg-slate-800 border-slate-700 p-6">
-              <h2 className="text-xl font-bold text-white mb-4">预算估算</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">材料费用</span>
-                  <span className="text-white font-medium">¥350,000</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">人工费用</span>
-                  <span className="text-white font-medium">¥105,000</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">预留费用</span>
-                  <span className="text-white font-medium">¥35,000</span>
-                </div>
-                <div className="border-t border-slate-700 pt-3 flex justify-between">
-                  <span className="text-white font-semibold">总造价</span>
-                  <span className="text-emerald-400 font-bold text-lg">¥490,000</span>
-                </div>
-              </div>
-            </Card>
+
           </div>
 
           {/* Right: Chat */}

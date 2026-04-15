@@ -97,7 +97,7 @@ export default function Home() {
             <div className="p-6 bg-slate-800/50 border border-slate-700 rounded-lg hover:border-emerald-500/50 transition-colors">
               <BarChart3 className="w-8 h-8 text-green-400 mb-4" />
               <h3 className="font-semibold mb-2">完整交付包</h3>
-              <p className="text-slate-400 text-sm">效果图、施工图、材料清单、造价估算</p>
+              <p className="text-slate-400 text-sm">效果图、施工图、材料清单</p>
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function Home() {
               <div>
                 <h3 className="text-xl font-semibold mb-2">完整交付包输出</h3>
                 <p className="text-slate-400">
-                  输出效果图（JPG/PNG）、施工图（DWG+PDF）、材料清单及估算造价表，一站式满足业主所有需求
+                  输出效果图（JPG/PNG）、施工图（DWG+PDF）、材料清单，一站式满足业主所有需求
                 </p>
               </div>
             </div>
@@ -192,9 +192,9 @@ export default function Home() {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">项目管理与预算估算</h3>
+                <h3 className="text-xl font-semibold mb-2">项目管理</h3>
                 <p className="text-slate-400">
-                  保存多个设计项目，查看历史方案版本，对比不同风格方案，支持材料档次调整和自动造价计算
+                  保存多个设计项目，查看历史方案版本，对比不同风格方案，支持材料档次调整
                 </p>
               </div>
             </div>

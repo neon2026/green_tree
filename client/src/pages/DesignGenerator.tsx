@@ -232,7 +232,7 @@ export default function DesignGenerator() {
 
                 <div className="mt-6 p-4 bg-slate-700 rounded-lg">
                   <p className="text-sm text-slate-300">
-                    系统将为您生成5-10种不同风格的设计方案，每种方案都包含效果图、参数和造价估算。
+                    系统将为您生成5-10种不同风格的设计方案，每种方案都包含效果图、参数和施工图。
                   </p>
                 </div>
               </Card>
@@ -274,12 +274,7 @@ export default function DesignGenerator() {
                         <span className="text-slate-400">预算等级</span>
                         <span className="text-white">{design.budgetRange}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">造价估算</span>
-                        <span className="text-emerald-400 font-semibold">
-                          ¥{design.estimatedBudget?.toLocaleString()}
-                        </span>
-                      </div>
+
                     </div>
 
                     <Button

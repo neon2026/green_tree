@@ -44,7 +44,6 @@ export default function CompareDesigns() {
               rgbDensity: "high",
               machineCount: 48,
               totalArea: 2500,
-              estimatedPrice: 1250000,
             },
             {
               id: projectId * 100 + 2,
@@ -54,7 +53,6 @@ export default function CompareDesigns() {
               rgbDensity: "medium",
               machineCount: 48,
               totalArea: 2500,
-              estimatedPrice: 950000,
             },
             {
               id: projectId * 100 + 3,
@@ -64,7 +62,6 @@ export default function CompareDesigns() {
               rgbDensity: "low",
               machineCount: 48,
               totalArea: 2500,
-              estimatedPrice: 750000,
             },
           ],
         }));
@@ -207,17 +204,7 @@ export default function CompareDesigns() {
                       ))}
                     </tr>
 
-                    {/* 估算造价对比 */}
-                    <tr className="hover:bg-slate-700/50">
-                      <td className="px-6 py-4 text-slate-300 font-medium">估算造价</td>
-                      {designs.map((project) => (
-                        <td key={project.projectId} className="px-6 py-4">
-                          <span className="text-emerald-400 font-semibold text-lg">
-                            ¥{(project.designs[0]?.estimatedPrice / 10000).toFixed(1)}万
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
+
                   </tbody>
                 </table>
               </div>
