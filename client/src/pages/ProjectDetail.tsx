@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Upload, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Upload, AlertCircle, CheckCircle2, Download, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export default function ProjectDetail() {
@@ -10,6 +10,7 @@ export default function ProjectDetail() {
   const [, setLocation] = useLocation();
   const [cadFile, setCadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<{name: string; size: number; url: string} | null>(null);
 
   // 安全地解析projectId，处理无效值
   const projectIdNum = projectId ? parseInt(projectId, 10) : 0;
@@ -21,7 +22,14 @@ export default function ProjectDetail() {
   );
 
   const uploadCADMutation = trpc.projects.uploadCAD.useMutation({
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      if (cadFile) {
+        setUploadedFile({
+          name: cadFile.name,
+          size: cadFile.size,
+          url: data.cadFileUrl || "",
+        });
+      }
       setCadFile(null);
       setIsUploading(false);
     },
@@ -201,6 +209,46 @@ export default function ProjectDetail() {
                     "上传并解析平面图"
                   )}
                 </Button>
+
+                {/* Uploaded File Display */}
+                {uploadedFile && (
+                  <div className="bg-emerald-900/20 border border-emerald-700 rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-emerald-200 font-semibold text-sm mb-1">平面图已上传</p>
+                          <p className="text-emerald-100 text-sm truncate">{uploadedFile.name}</p>
+                          <p className="text-emerald-300/70 text-xs mt-1">
+                            {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0 ml-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-emerald-300 hover:text-emerald-100 hover:bg-emerald-900/30"
+                          onClick={() => {
+                            if (uploadedFile.url) {
+                              window.open(uploadedFile.url, '_blank');
+                            }
+                          }}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-emerald-300 hover:text-red-400 hover:bg-red-900/20"
+                          onClick={() => setUploadedFile(null)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
           </div>

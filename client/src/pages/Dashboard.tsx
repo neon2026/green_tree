@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [selectedProjects, setSelectedProjects] = useState<number[]>([]);
 
   const { data: projects, isLoading: projectsLoading } = trpc.projects.list.useQuery();
+  const utils = trpc.useUtils();
 
   const createProjectMutation = trpc.projects.create.useMutation({
     onSuccess: (data: any) => {
@@ -31,7 +32,7 @@ export default function Dashboard() {
     onSuccess: () => {
       setShowDeleteConfirm(false);
       setDeletingProjectId(null);
-      trpc.useUtils().projects.list.invalidate();
+      void utils.projects.list.invalidate();
     },
   });
 

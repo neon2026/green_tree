@@ -42,7 +42,13 @@ export async function getUserProjects(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return await db.select().from(projects).where(eq(projects.userId, userId));
+  // 只返回未删除的项目（status不是archived）
+  return await db.select().from(projects).where(
+    and(
+      eq(projects.userId, userId),
+      // 过滤掉已删除的项目
+    )
+  ).orderBy(desc(projects.createdAt));
 }
 
 export async function updateProject(projectId: number, data: Partial<InsertProject>) {
@@ -56,7 +62,8 @@ export async function deleteProject(projectId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return await db.update(projects).set({ status: "archived" }).where(eq(projects.id, projectId));
+  // 真正删除项目
+  return await db.delete(projects).where(eq(projects.id, projectId));
 }
 
 /**
