@@ -133,7 +133,7 @@ export default function ProjectDetail() {
                 >
                   <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
                   <p className="text-white font-medium mb-1">点击选择平面图文件</p>
-                  <p className="text-slate-400 text-sm">支持 DWG、DXF、JPG、PNG 格式，最大 10MB</p>
+                  <p className="text-slate-400 text-sm">支持 DWG、DXF、JPG、PNG 格式，最大 50MB</p>
 
                   <input
                     id="cad-file-input"
@@ -143,6 +143,11 @@ export default function ProjectDetail() {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        const maxSize = 50 * 1024 * 1024; // 50MB
+                        if (file.size > maxSize) {
+                          alert(`文件过大！最大支持 50MB，您选择的文件大小为 ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+                          return;
+                        }
                         setCadFile(file);
                       }
                     }}
