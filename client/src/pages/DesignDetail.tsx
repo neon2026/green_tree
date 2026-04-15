@@ -28,13 +28,19 @@ export default function DesignDetail() {
   const [isGenerating, setIsGenerating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // State for renderings
-  const [renderings, setRenderings] = useState<Array<{ area: string; url: string }>>([
-    { area: "hall", url: "" },
-    { area: "bar", url: "" },
-    { area: "vip", url: "" },
-    { area: "gaming", url: "" },
-  ]);
+  // State for renderings - 7 areas
+  const renderingAreas = [
+    { id: "entrance", label: "门头" },
+    { id: "corridor", label: "通道" },
+    { id: "bar", label: "吧台" },
+    { id: "stage", label: "舞台" },
+    { id: "seating", label: "散座" },
+    { id: "private_room", label: "包间" },
+    { id: "restroom", label: "卫生间" },
+  ];
+  const [renderings, setRenderings] = useState<Array<{ area: string; url: string; label: string }>>(
+    renderingAreas.map(a => ({ area: a.id, url: "", label: a.label }))
+  );
   const [isGeneratingRenderings, setIsGeneratingRenderings] = useState(false);
 
   // API Calls
@@ -87,10 +93,14 @@ export default function DesignDetail() {
       
       if (result.success && result.renderings) {
         setRenderings(
-          result.renderings.map((r: any) => ({
-            area: r.area,
-            url: r.url,
-          }))
+          result.renderings.map((r: any) => {
+            const areaLabel = renderingAreas.find(a => a.id === r.area)?.label || r.area;
+            return {
+              area: r.area,
+              url: r.url,
+              label: areaLabel,
+            };
+          })
         );
       }
     } catch (error) {
@@ -213,7 +223,7 @@ export default function DesignDetail() {
                   )}
                 </Button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {renderings.map((rendering) => (
                   <Card
                     key={rendering.area}
@@ -229,12 +239,7 @@ export default function DesignDetail() {
                       ) : (
                         <div className="text-center">
                           <ImageIcon className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                          <p className="text-slate-400 text-sm">
-                            {rendering.area === "hall" && "大厅效果图"}
-                            {rendering.area === "bar" && "吧台效果图"}
-                            {rendering.area === "vip" && "VIP包间效果图"}
-                            {rendering.area === "gaming" && "游戏区效果图"}
-                          </p>
+                          <p className="text-slate-400 text-sm">{rendering.label}效果图</p>
                         </div>
                       )}
                     </div>
