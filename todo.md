@@ -219,3 +219,9 @@
 
 - [x] 在 renderingGenerator.ts 中将 Party K 主题写入效果图提示词，并验证生成时实际使用该主题描述
 - [x] 为效果图放大模态框添加图片导航（上一张/下一张、键盘方向键）并验证交互
+
+### Vite HMR WebSocket 连接失败修复
+- [x] 检查 Vite 配置与 HMR WebSocket 设置
+- [x] 修复开发环境下的 WebSocket 连接配置
+- [x] 验证 /projects/60002/designs 页面不再报该错误
+- [x] 验证开发服务器热更新与页面访问稳定
