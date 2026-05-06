@@ -36,28 +36,31 @@ export function generateRenderingPrompt(request: RenderingRequest): string {
     minimalist: "minimalist style, simple design, high-end modern",
     industrial: "industrial style, metal texture, raw materials",
     luxury: "luxury style, high-end decoration, gold accents",
+    party_k: "party K nightlife style, neon purple and cyan, KTV party atmosphere, cool glossy lighting, immersive entertainment space",
     neon: "neon style, colorful lights, vibrant, dynamic",
     retro: "retro style, vintage elements, warm tones, classic",
   };
 
   const areaDescriptions: Record<RenderingAreaType, string> = {
-    entrance: "nightclub entrance, LED sign, impressive entrance, neon lights",
-    corridor: "corridor area, sleek design, lighting guide, spacious",
-    bar: "bar counter area, bartender station, high stools, liquor display",
-    stage: "stage area, center stage, sound system, colorful lighting",
-    seating: `seating area, ${request.machineCount} gaming machines, comfortable seats, RGB lights`,
-    private_room: `private rooms, ${request.roomCount} booths, private, high-end sofas`,
-    restroom: "restroom area, modern design, clean, bright lighting",
+    entrance: "party K entrance, neon sign facade, nightlife arrival moment, cyan and purple glow",
+    corridor: "party corridor area, reflective surfaces, directional light strips, immersive nightlife transition",
+    bar: "party bar counter area, bartender station, glossy materials, cocktail nightlife mood",
+    stage: "party stage area, karaoke performance focus, sound system, dramatic lighting beams",
+    seating: `open seating area, ${request.machineCount} entertainment seats, booth sofas, lively party lighting`,
+    private_room: `private KTV rooms, ${request.roomCount} themed booths, plush sofas, intimate party atmosphere`,
+    restroom: "restroom area, stylish hospitality finish, clean design, coordinated accent lighting",
   };
 
   // Simplified unified prompt
   const unifiedStyle = `
-Professional interior design rendering of a ${request.styleTheme} nightclub.
-Style: ${styleDescriptions[request.styleTheme] || "modern"}
+Professional interior design rendering of a Party K nightlife entertainment venue.
+Theme keyword: ${request.styleTheme}
+Style: ${styleDescriptions[request.styleTheme] || "modern nightlife entertainment interior"}
 Color scheme: ${request.colorScheme}
-Area: ${areaDescriptions[request.area] || ""}
-Lighting: RGB LED lights creating atmosphere
-Quality: High-quality 3D rendering, photorealistic, detailed, professional
+Area focus: ${areaDescriptions[request.area] || ""}
+Lighting: RGB LED lights, neon purple and cyan accents, immersive party atmosphere
+Mood: trendy, energetic, premium, cohesive visual language across all areas
+Quality: high-quality 3D rendering, photorealistic, detailed, professional interior visualization
 Space: ${request.totalArea} square meters
   `.trim();
 

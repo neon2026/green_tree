@@ -1,13 +1,70 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { generateDesignRenderings } from "../services/renderingGenerator";
-import { getDesignById } from "../db-helpers";
-import { createRendering } from "../db-helpers";
+import {
+  generateDesignRenderings,
+  generateRendering,
+  type RenderingAreaType,
+} from "../services/renderingGenerator";
+import {
+  createRendering,
+  getDesignById,
+  getLatestRenderingsByArea,
+  getRenderingHistory,
+} from "../db-helpers";
+
+const renderingAreas = [
+  "entrance",
+  "corridor",
+  "bar",
+  "stage",
+  "seating",
+  "private_room",
+  "restroom",
+] as const;
+
+const areaLabels: Record<RenderingAreaType, string> = {
+  entrance: "门头",
+  corridor: "通道",
+  bar: "吧台",
+  stage: "舞台",
+  seating: "散座",
+  private_room: "包间",
+  restroom: "卫生间",
+};
+
+function buildCadParameters(raw: unknown) {
+  const params = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const cadParameters = (params.cadParameters && typeof params.cadParameters === "object"
+    ? params.cadParameters
+    : {}) as Record<string, unknown>;
+
+  return {
+    totalArea: Number(cadParameters.totalArea ?? 500),
+    machineCount: Number(cadParameters.machineCount ?? 20),
+    roomCount: Number(cadParameters.roomCount ?? 5),
+    rgbDensity: String(params.rgbDensity ?? "high") as "low" | "medium" | "high",
+  };
+}
+
+function normalizeRendering(record: {
+  id?: number;
+  areaType?: string | null;
+  imageUrl?: string | null;
+  version?: number | null;
+  createdAt?: Date | null;
+}) {
+  const area = (record.areaType || "entrance") as RenderingAreaType;
+  return {
+    id: record.id ?? 0,
+    area,
+    label: areaLabels[area] || area,
+    url: record.imageUrl || "",
+    version: record.version ?? 1,
+    createdAt: record.createdAt?.toISOString?.() ?? null,
+  };
+}
 
 export const renderingsRouter = router({
-  /**
-   * 为设计方案生成效果图
-   */
   generate: protectedProcedure
     .input(
       z.object({
@@ -15,7 +72,6 @@ export const renderingsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // 获取设计方案信息
       const design = await getDesignById(input.designId);
       if (!design) {
         throw new Error("设计方案不存在");
@@ -23,36 +79,46 @@ export const renderingsRouter = router({
 
       try {
         const parameters = JSON.parse(design.parameters || "{}");
-        const cadParameters = parameters.cadParameters || {
-          totalArea: 500,
-          machineCount: 20,
-          roomCount: 5,
-        };
-        
-        const styleTheme = design.styleTheme || "cyberpunk";
-        const colorScheme = design.colorScheme || "blue";
+        const cadParameters = buildCadParameters(parameters);
+        const normalizedStyleTheme = design.styleTheme === "partyk" ? "party_k" : design.styleTheme;
+        const styleTheme = normalizedStyleTheme || "party_k";
+        const colorScheme = design.colorScheme || "neon purple and cyan";
+        const history = await getRenderingHistory(input.designId);
+        const versionCounter = new Map<string, number>();
 
-        // 生成所有区域的效果图
-        const renderings = await generateDesignRenderings(
+        for (const item of history) {
+          const currentVersion = versionCounter.get(item.areaType || "") || 0;
+          versionCounter.set(item.areaType || "", Math.max(currentVersion, item.version || 1));
+        }
+
+        const generated = await generateDesignRenderings(
           input.designId,
           styleTheme,
           colorScheme,
           cadParameters,
-          parameters.rgbDensity || "medium"
+          cadParameters.rgbDensity
         );
 
-        // 保存效果图到数据库
         const savedRenderings = [];
-        for (const rendering of renderings) {
+        for (const rendering of generated) {
+          const nextVersion = (versionCounter.get(rendering.area) || 0) + 1;
+          versionCounter.set(rendering.area, nextVersion);
+
           const result = await createRendering({
             designId: input.designId,
             imageUrl: rendering.url,
-            imageKey: `design_${input.designId}_${rendering.area}`,
+            imageKey: `design_${input.designId}_${rendering.area}_v${nextVersion}`,
             areaType: rendering.area,
+            version: nextVersion,
           });
+
           savedRenderings.push({
-            ...rendering,
-            databaseId: (result as any).insertId || 0,
+            id: (result as any).insertId || 0,
+            area: rendering.area,
+            label: rendering.label,
+            url: rendering.url,
+            prompt: rendering.prompt,
+            version: nextVersion,
           });
         }
 
@@ -66,9 +132,6 @@ export const renderingsRouter = router({
       }
     }),
 
-  /**
-   * 获取设计方案的所有效果图
-   */
   list: protectedProcedure
     .input(
       z.object({
@@ -77,19 +140,76 @@ export const renderingsRouter = router({
     )
     .query(async ({ input }) => {
       try {
-        // TODO: 从数据库查询renderings表
-        // const db = await getDb();
-        // const renderings = await db.select().from(renderings).where(eq(renderings.designId, input.designId));
-        // return { renderings };
-        
-        // 临时返回空数组，待数据库集成
+        const [latestRenderings, history] = await Promise.all([
+          getLatestRenderingsByArea(input.designId),
+          getRenderingHistory(input.designId),
+        ]);
+
         return {
-          renderings: [],
-          message: "效果图列表功能开发中",
+          renderings: latestRenderings.map(normalizeRendering),
+          history: history.map(normalizeRendering),
         };
       } catch (error) {
         console.error("Failed to list renderings:", error);
         throw new Error("获取效果图列表失败");
+      }
+    }),
+
+  regenerateArea: protectedProcedure
+    .input(
+      z.object({
+        designId: z.number(),
+        area: z.enum(renderingAreas),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const design = await getDesignById(input.designId);
+      if (!design) {
+        throw new Error("设计方案不存在");
+      }
+
+      try {
+        const parameters = JSON.parse(design.parameters || "{}");
+        const cadParameters = buildCadParameters(parameters);
+        const normalizedStyleTheme = design.styleTheme === "partyk" ? "party_k" : design.styleTheme;
+        const styleTheme = normalizedStyleTheme || "party_k";
+        const colorScheme = design.colorScheme || "neon purple and cyan";
+        const history = await getRenderingHistory(input.designId);
+        const currentAreaHistory = history.filter((item) => item.areaType === input.area);
+        const nextVersion = (currentAreaHistory[0]?.version || 0) + 1;
+
+        const rendering = await generateRendering({
+          styleTheme,
+          colorScheme,
+          area: input.area,
+          machineCount: cadParameters.machineCount,
+          roomCount: cadParameters.roomCount,
+          totalArea: cadParameters.totalArea,
+          rgbDensity: cadParameters.rgbDensity,
+        });
+
+        const result = await createRendering({
+          designId: input.designId,
+          imageUrl: rendering.url,
+          imageKey: `design_${input.designId}_${input.area}_v${nextVersion}`,
+          areaType: input.area,
+          version: nextVersion,
+        });
+
+        return {
+          success: true,
+          rendering: {
+            id: (result as any).insertId || 0,
+            area: input.area,
+            label: areaLabels[input.area],
+            url: rendering.url,
+            prompt: rendering.prompt,
+            version: nextVersion,
+          },
+        };
+      } catch (error) {
+        console.error("Failed to regenerate area rendering:", error);
+        throw new Error("单张效果图重新生成失败，请稍后重试");
       }
     }),
 });
