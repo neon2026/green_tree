@@ -74,27 +74,35 @@ export async function generateRendering(request: RenderingRequest): Promise<{
   url: string;
   prompt: string;
   area: string;
+  isFallback?: boolean;
 }> {
+  const prompt = generateRenderingPrompt(request);
+
   try {
-    const prompt = generateRenderingPrompt(request);
     console.log(`[Rendering] Generating for area: ${request.area}, prompt length: ${prompt.length}`);
-    
-    // 调用图像生成API
+
     const result = await generateImage({
       prompt,
     });
-    
+
     console.log(`[Rendering] Successfully generated image for ${request.area}: ${result.url}`);
-    
+
     return {
-      url: result.url || "",
+      url: result.url || generatePlaceholderImage(request.area, request.styleTheme),
       prompt,
       area: request.area,
+      isFallback: !result.url,
     };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error(`[Rendering] Failed to generate rendering for area ${request.area}: ${errorMsg}`);
-    throw error;
+
+    return {
+      url: generatePlaceholderImage(request.area, request.styleTheme),
+      prompt,
+      area: request.area,
+      isFallback: true,
+    };
   }
 }
 
@@ -182,7 +190,6 @@ export async function generateDesignRenderings(designId: number, styleTheme: str
       });
     } catch (error) {
       console.error(`[Rendering] Error generating ${area}:`, error);
-      // 使用占位图片作为备选
       results.push({
         area,
         label: areaLabels[area],
