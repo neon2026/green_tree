@@ -5,17 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Loader2, Wand2, Check, AlertCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
-type ColorTheme = "blue" | "purple" | "green" | "red" | "multicolor";
 type BudgetRange = "economy" | "standard" | "premium";
 type RGBDensity = "low" | "medium" | "high";
-
-const COLOR_THEMES: { value: ColorTheme; label: string; description: string }[] = [
-  { value: "blue", label: "蓝色系", description: "冷静、科技感" },
-  { value: "purple", label: "紫色系", description: "神秘、高端" },
-  { value: "green", label: "绿色系", description: "活力、专业" },
-  { value: "red", label: "红色系", description: "热烈、竞技" },
-  { value: "multicolor", label: "多彩", description: "炫彩、社交" },
-];
 
 const BUDGET_RANGES: { value: BudgetRange; label: string; description: string }[] = [
   { value: "economy", label: "经济版", description: "成本控制，基础配置" },
@@ -39,7 +30,6 @@ export default function DesignGenerator() {
 
   // UI State
   const [step, setStep] = useState<"config" | "generating" | "results">("config");
-  const [colorTheme, setColorTheme] = useState<ColorTheme>("blue");
   const [budgetRange, setBudgetRange] = useState<BudgetRange>("standard");
   const [rgbDensity, setRGBDensity] = useState<RGBDensity>("medium");
 
@@ -82,7 +72,6 @@ export default function DesignGenerator() {
     setStep("generating");
     generateMutation.mutate({
       projectId: projectIdNum,
-      colorTheme,
       budgetRange,
       rgbDensity,
     });
@@ -118,26 +107,7 @@ export default function DesignGenerator() {
               <Card className="bg-slate-800 border-slate-700 p-8">
                 <h2 className="text-2xl font-bold text-white mb-8">配置设计参数</h2>
 
-                {/* Color Theme Selection */}
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-white mb-4">颜色主题</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {COLOR_THEMES.map((theme) => (
-                      <button
-                        key={theme.value}
-                        onClick={() => setColorTheme(theme.value)}
-                        className={`p-4 rounded-lg border-2 transition-all ${
-                          colorTheme === theme.value
-                            ? "border-emerald-500 bg-slate-700"
-                            : "border-slate-600 hover:border-slate-500"
-                        }`}
-                      >
-                        <p className="font-semibold text-white">{theme.label}</p>
-                        <p className="text-sm text-slate-400">{theme.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+
 
                 {/* Budget Range Selection */}
                 <div className="mb-8">
@@ -208,13 +178,6 @@ export default function DesignGenerator() {
                 <h3 className="text-lg font-bold text-white mb-4">配置摘要</h3>
 
                 <div className="space-y-4">
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider">颜色主题</p>
-                    <p className="text-white font-medium">
-                      {COLOR_THEMES.find((t) => t.value === colorTheme)?.label}
-                    </p>
-                  </div>
-
                   <div>
                     <p className="text-xs text-slate-400 uppercase tracking-wider">预算等级</p>
                     <p className="text-white font-medium">

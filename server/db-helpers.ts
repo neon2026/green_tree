@@ -203,3 +203,37 @@ export async function getMaterialByName(materialName: string) {
   const result = await db.select().from(materialLibrary).where(eq(materialLibrary.materialName, materialName)).limit(1);
   return result[0];
 }
+
+
+/**
+ * 效果图相关查询
+ */
+export async function getRenderingHistory(designId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 按创建时间倒序获取所有效果图
+  return await db.select().from(renderings)
+    .where(eq(renderings.designId, designId))
+    .orderBy(desc(renderings.createdAt));
+}
+
+export async function getLatestRenderingsByArea(designId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 获取每个区域的最新效果图
+  const allRenderings = await db.select().from(renderings)
+    .where(eq(renderings.designId, designId))
+    .orderBy(desc(renderings.createdAt));
+  
+  // 按areaType分组，只保留最新的
+  const latestByArea = new Map();
+  for (const rendering of allRenderings) {
+    if (!latestByArea.has(rendering.areaType)) {
+      latestByArea.set(rendering.areaType, rendering);
+    }
+  }
+  
+  return Array.from(latestByArea.values());
+}

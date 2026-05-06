@@ -162,7 +162,6 @@ export const designsRouter = router({
     .input(
       z.object({
         projectId: z.number(),
-        colorTheme: z.enum(["blue", "purple", "green", "red", "multicolor"]),
         budgetRange: z.enum(["economy", "standard", "premium"]),
         rgbDensity: z.enum(["low", "medium", "high"]),
       })
@@ -183,7 +182,6 @@ export const designsRouter = router({
       // 生成设计方案
       const designs = generateDesigns({
         cadParameters,
-        colorTheme: input.colorTheme,
         budgetRange: input.budgetRange,
         rgbDensity: input.rgbDensity,
       });

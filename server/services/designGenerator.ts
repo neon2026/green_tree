@@ -20,7 +20,6 @@ export interface DesignStyle {
 
 export interface DesignGenerationRequest {
   cadParameters: CADParameters;
-  colorTheme: string; // blue, purple, green, red, multicolor
   budgetRange: "economy" | "standard" | "premium";
   rgbDensity: "low" | "medium" | "high";
   customRequirements?: string;
@@ -129,7 +128,7 @@ export function generateDesigns(request: DesignGenerationRequest): GeneratedDesi
   const multiplier = budgetMultiplier[request.budgetRange];
 
   // 生成5-8个设计方案
-  const selectedStyles = selectStyles(request.colorTheme, 6);
+  const selectedStyles = selectStyles('multicolor', 6);
 
   selectedStyles.forEach((style) => {
     const design: GeneratedDesign = {
