@@ -85,13 +85,13 @@ const DESIGN_STYLES: DesignStyle[] = [
     budgetRange: { min: 140, max: 180 },
   },
   {
-    id: "luxury",
-    name: "高端会所",
-    theme: "Luxury",
-    colorScheme: "Black Gold + White",
-    description: "奢华感、高端材料、精致细节",
-    features: ["Premium materials", "Gold accents", "Luxury furniture", "Elegant design"],
-    budgetRange: { min: 200, max: 300 },
+    id: "party_k",
+    name: "Party K",
+    theme: "Party K",
+    colorScheme: "Neon Purple + Cyan",
+    description: "夜场霓虹 + KTV派对氛围 + 潮酷炫光视觉",
+    features: ["Neon lights", "KTV atmosphere", "Dynamic RGB", "Party vibes", "Cool neon glow"],
+    budgetRange: { min: 180, max: 280 },
   },
   {
     id: "retro_gaming",
@@ -165,10 +165,10 @@ export function generateDesigns(request: DesignGenerationRequest): GeneratedDesi
 function selectStyles(colorTheme: string, count: number): DesignStyle[] {
   const colorMap: Record<string, string[]> = {
     blue: ["future_tech", "scifi_theater", "retro_gaming"],
-    purple: ["scifi_theater", "luxury", "cyberpunk"],
+    purple: ["scifi_theater", "party_k", "cyberpunk"],
     green: ["minimalist", "cyberpunk", "trendy_bar"],
-    red: ["dark_gaming", "luxury", "cyberpunk"],
-    multicolor: ["trendy_bar", "luxury", "scifi_theater"],
+    red: ["dark_gaming", "party_k", "cyberpunk"],
+    multicolor: ["trendy_bar", "party_k", "scifi_theater"],
   };
 
   const preferredStyles = colorMap[colorTheme] || [];

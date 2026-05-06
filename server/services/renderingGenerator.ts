@@ -3,7 +3,6 @@
  * 负责生成效果图提示词和调用图像生成API
  * 支持7个区域：门头、通道、吧台、舞台、散座、包间、卫生间
  */
-
 import { generateImage } from "../_core/imageGeneration";
 
 export type RenderingAreaType = 
@@ -31,49 +30,38 @@ export interface RenderingRequest {
  */
 export function generateRenderingPrompt(request: RenderingRequest): string {
   const styleDescriptions: Record<string, string> = {
-    cyberpunk: "赛博朋克风格，霓虹灯光，未来科技感，高对比度，深色调为主",
-    futuristic: "未来科技风格，简洁现代，LED灯带，科技感十足，冷色调",
-    darkgaming: "暗黑竞技风格，深色调，RGB灯光，电竞氛围，视觉冲击强",
-    minimalist: "极简风格，简洁设计，功能性强，高端大气，留白充分",
-    industrial: "工业风格，金属感，粗糙质感，个性十足，原始材料",
-    luxury: "奢华风格，高端装修，金色装饰，尊贵感，精致细节",
-    neon: "霓虹风格，彩色灯光，年轻活力，动感十足，多彩配色",
-    retro: "复古风格，怀旧元素，温暖色调，舒适感，经典设计",
+    cyberpunk: "cyberpunk style, neon lights, futuristic, high contrast",
+    futuristic: "futuristic modern style, LED lights, tech feel, cool tones",
+    darkgaming: "dark gaming style, RGB lights, esports atmosphere",
+    minimalist: "minimalist style, simple design, high-end modern",
+    industrial: "industrial style, metal texture, raw materials",
+    luxury: "luxury style, high-end decoration, gold accents",
+    neon: "neon style, colorful lights, vibrant, dynamic",
+    retro: "retro style, vintage elements, warm tones, classic",
   };
 
   const areaDescriptions: Record<RenderingAreaType, string> = {
-    entrance: `门头区域，品牌标识清晰，入口大气恢宏，LED招牌闪烁，吸引力强`,
-    corridor: `通道区域，流线型设计，灯光引导，宽敞舒适，连接各区域`,
-    bar: `吧台区域，调酒台设计精良，高脚椅排列整齐，酒柜展示精致，${request.rgbDensity === "high" ? "密集RGB灯带营造氛围" : "适度RGB灯带"}`,
-    stage: `舞台区域，中心舞台设计，音响系统完善，灯光效果炫彩，观众视野开阔`,
-    seating: `散座区域，${request.machineCount}个游戏机位分布合理，座椅舒适，${request.rgbDensity === "high" ? "RGB灯带密集分布" : "RGB灯带均匀分布"}`,
-    private_room: `包间区域，${request.roomCount}个独立包间，私密性强，独立空调，高级沙发，隔音效果好`,
-    restroom: `卫生间区域，现代简洁设计，照明充足，通风良好，卫生整洁，高端装修`,
+    entrance: "nightclub entrance, LED sign, impressive entrance, neon lights",
+    corridor: "corridor area, sleek design, lighting guide, spacious",
+    bar: "bar counter area, bartender station, high stools, liquor display",
+    stage: "stage area, center stage, sound system, colorful lighting",
+    seating: `seating area, ${request.machineCount} gaming machines, comfortable seats, RGB lights`,
+    private_room: `private rooms, ${request.roomCount} booths, private, high-end sofas`,
+    restroom: "restroom area, modern design, clean, bright lighting",
   };
 
-  const rgbDescriptions: Record<string, string> = {
-    low: "RGB灯带适度分布，重点照亮关键区域，营造舒适氛围",
-    medium: "RGB灯带均匀分布，营造电竞氛围，视觉层次丰富",
-    high: "RGB灯带密集分布，全方位照亮，视觉冲击强，炫彩效果",
-  };
-
-  // 统一的设计语言和质量要求
+  // Simplified unified prompt
   const unifiedStyle = `
-    设计风格：${styleDescriptions[request.styleTheme] || "现代风格"}
-    色彩方案：${request.colorScheme}
-    区域描述：${areaDescriptions[request.area] || ""}
-    灯光配置：${rgbDescriptions[request.rgbDensity] || ""}
-    
-    设计要求：
-    - 整体风格协调统一，与其他区域相呼应
-    - 高质量室内设计效果图，专业渲染，细节丰富
-    - 光影逼真，材质质感强，空间感十足
-    - 人物活动场景自然，营造真实的使用氛围
-    - 色彩搭配和谐，灯光效果恰到好处
-    - 总面积参考：${request.totalArea}平方米
-  `;
+Professional interior design rendering of a ${request.styleTheme} nightclub.
+Style: ${styleDescriptions[request.styleTheme] || "modern"}
+Color scheme: ${request.colorScheme}
+Area: ${areaDescriptions[request.area] || ""}
+Lighting: RGB LED lights creating atmosphere
+Quality: High-quality 3D rendering, photorealistic, detailed, professional
+Space: ${request.totalArea} square meters
+  `.trim();
 
-  return unifiedStyle.trim();
+  return unifiedStyle;
 }
 
 /**
@@ -86,91 +74,32 @@ export async function generateRendering(request: RenderingRequest): Promise<{
 }> {
   try {
     const prompt = generateRenderingPrompt(request);
-
+    console.log(`[Rendering] Generating for area: ${request.area}, prompt length: ${prompt.length}`);
+    
     // 调用图像生成API
     const result = await generateImage({
       prompt,
     });
-
+    
+    console.log(`[Rendering] Successfully generated image for ${request.area}: ${result.url}`);
+    
     return {
       url: result.url || "",
       prompt,
       area: request.area,
     };
   } catch (error) {
-    console.error("Failed to generate rendering:", error);
-    throw new Error("效果图生成失败，请稍后重试");
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[Rendering] Failed to generate rendering for area ${request.area}: ${errorMsg}`);
+    throw error;
   }
 }
 
 /**
- * 批量生成多个区域的效果图
+ * 生成占位图片（当API失败时使用）
  */
-export async function generateMultipleRenderings(
-  request: Omit<RenderingRequest, "area">,
-  areas: RenderingAreaType[]
-): Promise<Array<{ url: string; prompt: string; area: string }>> {
-  const results = [];
-
-  for (const area of areas) {
-    try {
-      const result = await generateRendering({
-        ...request,
-        area,
-      });
-      results.push(result);
-    } catch (error) {
-      console.error(`Failed to generate rendering for area ${area}:`, error);
-      // 继续生成其他区域
-    }
-  }
-
-  return results;
-}
-
-/**
- * 为设计方案生成所有区域的效果图
- * 7个区域：门头、通道、吧台、舞台、散座、包间、卫生间
- */
-export async function generateDesignRenderings(
-  designId: number,
-  styleTheme: string,
-  colorScheme: string,
-  cadParameters: {
-    totalArea: number;
-    machineCount: number;
-    roomCount: number;
-  },
-  rgbDensity: "low" | "medium" | "high"
-): Promise<Array<{ url: string; prompt: string; area: string }>> {
-  const areas: RenderingAreaType[] = [
-    "entrance",
-    "corridor",
-    "bar",
-    "stage",
-    "seating",
-    "private_room",
-    "restroom",
-  ];
-
-  return generateMultipleRenderings(
-    {
-      styleTheme,
-      colorScheme,
-      machineCount: cadParameters.machineCount,
-      roomCount: cadParameters.roomCount,
-      totalArea: cadParameters.totalArea,
-      rgbDensity,
-    },
-    areas
-  );
-}
-
-/**
- * 获取所有区域的中文名称
- */
-export function getAreaLabel(area: RenderingAreaType): string {
-  const labels: Record<RenderingAreaType, string> = {
+export function generatePlaceholderImage(area: RenderingAreaType, theme: string): string {
+  const areaLabels: Record<RenderingAreaType, string> = {
     entrance: "门头",
     corridor: "通道",
     bar: "吧台",
@@ -179,20 +108,86 @@ export function getAreaLabel(area: RenderingAreaType): string {
     private_room: "包间",
     restroom: "卫生间",
   };
-  return labels[area] || area;
+
+  const label = areaLabels[area] || area;
+  
+  // 创建SVG占位图
+  const svg = `
+    <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="600" height="400" fill="url(#grad)"/>
+      <circle cx="300" cy="150" r="50" fill="#00ff88" opacity="0.3"/>
+      <text x="300" y="250" font-size="32" fill="#00ff88" text-anchor="middle" font-family="Arial">${label}</text>
+      <text x="300" y="300" font-size="16" fill="#00ff88" text-anchor="middle" font-family="Arial" opacity="0.6">${theme}</text>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
+
 /**
- * 获取所有区域列表
+ * 为设计方案生成所有区域的效果图
  */
-export function getAllAreas(): Array<{ id: RenderingAreaType; label: string }> {
-  return [
-    { id: "entrance", label: "门头" },
-    { id: "corridor", label: "通道" },
-    { id: "bar", label: "吧台" },
-    { id: "stage", label: "舞台" },
-    { id: "seating", label: "散座" },
-    { id: "private_room", label: "包间" },
-    { id: "restroom", label: "卫生间" },
-  ];
+export async function generateDesignRenderings(designId: number, styleTheme: string, colorScheme: string, cadParams: any, rgbDensity: string = "medium"): Promise<Array<{
+  area: string;
+  label: string;
+  url: string;
+  prompt: string;
+}>> {
+  const areas: RenderingAreaType[] = ["entrance", "corridor", "bar", "stage", "seating", "private_room", "restroom"];
+  const areaLabels: Record<RenderingAreaType, string> = {
+    entrance: "门头",
+    corridor: "通道",
+    bar: "吧台",
+    stage: "舞台",
+    seating: "散座",
+    private_room: "包间",
+    restroom: "卫生间",
+  };
+
+  const results: Array<{
+    area: string;
+    label: string;
+    url: string;
+    prompt: string;
+  }> = [];
+
+  for (const area of areas) {
+    try {
+      const request: RenderingRequest = {
+        styleTheme,
+        colorScheme,
+        area,
+        machineCount: cadParams?.machineCount || 20,
+        roomCount: cadParams?.roomCount || 5,
+        totalArea: cadParams?.totalArea || 500,
+        rgbDensity: "high",
+      };
+
+      const rendering = await generateRendering(request);
+      results.push({
+        area,
+        label: areaLabels[area],
+        url: rendering.url,
+        prompt: rendering.prompt,
+      });
+    } catch (error) {
+      console.error(`[Rendering] Error generating ${area}:`, error);
+      // 使用占位图片作为备选
+      results.push({
+        area,
+        label: areaLabels[area],
+        url: generatePlaceholderImage(area, styleTheme),
+        prompt: "",
+      });
+    }
+  }
+
+  return results;
 }

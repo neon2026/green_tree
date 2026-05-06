@@ -42,6 +42,7 @@ export default function DesignDetail() {
     renderingAreas.map(a => ({ area: a.id, url: "", label: a.label }))
   );
   const [isGeneratingRenderings, setIsGeneratingRenderings] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ url: string; label: string } | null>(null);
 
   // API Calls
   const { data: design } = trpc.designs.get.useQuery(
@@ -227,14 +228,15 @@ export default function DesignDetail() {
                 {renderings.map((rendering) => (
                   <Card
                     key={rendering.area}
-                    className="bg-slate-800 border-slate-700 overflow-hidden hover:border-emerald-500 transition-colors"
+                    className="bg-slate-800 border-slate-700 overflow-hidden hover:border-emerald-500 transition-colors cursor-pointer"
+                    onClick={() => rendering.url && setSelectedImage({ url: rendering.url, label: rendering.label })}
                   >
                     <div className="aspect-video bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
                       {rendering.url ? (
                         <img
                           src={rendering.url}
                           alt={rendering.area}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform"
                         />
                       ) : (
                         <div className="text-center">
@@ -246,6 +248,36 @@ export default function DesignDetail() {
                   </Card>
                 ))}
               </div>
+
+              {/* Image Enlargement Modal */}
+              {selectedImage && (
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <div
+                    className="bg-slate-900 rounded-lg max-w-4xl max-h-96 flex flex-col"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                      <h3 className="text-white font-semibold">{selectedImage.label}效果图</h3>
+                      <button
+                        onClick={() => setSelectedImage(null)}
+                        className="text-slate-400 hover:text-white transition-colors"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-auto">
+                      <img
+                        src={selectedImage.url}
+                        alt={selectedImage.label}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
 
