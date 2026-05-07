@@ -89,4 +89,25 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function updateUserProfile(openId: string, profile: { name?: string | null; email?: string | null }) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update user profile: database not available");
+    return undefined;
+  }
+
+  const normalizedName = profile.name?.trim() ? profile.name.trim() : null;
+  const normalizedEmail = profile.email?.trim() ? profile.email.trim() : null;
+
+  await db
+    .update(users)
+    .set({
+      name: normalizedName,
+      email: normalizedEmail,
+    })
+    .where(eq(users.openId, openId));
+
+  return getUserByOpenId(openId);
+}
+
 // TODO: add feature queries here as your schema grows.

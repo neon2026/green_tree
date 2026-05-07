@@ -10,6 +10,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import DesignGenerator from "./pages/DesignGenerator";
 import DesignDetail from "./pages/DesignDetail";
 import CompareDesigns from "./pages/CompareDesigns";
+import Profile from "./pages/Profile";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/projects/:projectId/designs" component={DesignGenerator} />
       <Route path="/projects/:projectId/design/:designId" component={DesignDetail} />
       <Route path="/compare" component={CompareDesigns} />
+      <Route path="/profile" component={Profile} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
