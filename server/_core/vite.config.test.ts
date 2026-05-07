@@ -2,12 +2,9 @@ import { describe, expect, it } from "vitest";
 import viteConfig from "../../vite.config";
 
 describe("Vite HMR config", () => {
-  it("uses secure same-origin HMR settings for preview domains", () => {
+  it("keeps strictPort enabled and does not force legacy remote HMR overrides", () => {
     expect(viteConfig.server?.strictPort).toBe(true);
-    expect(viteConfig.server?.hmr).toMatchObject({
-      protocol: "wss",
-      clientPort: 443,
-    });
+    expect(viteConfig.server?.hmr).toBeUndefined();
   });
 
   it("keeps Manus preview hosts allowlisted", () => {
