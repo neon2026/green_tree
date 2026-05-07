@@ -4,6 +4,7 @@ import { AlertCircle, Download, History, Image as ImageIcon, Loader2, RotateCcw,
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { buildConstructionPdfDocument, buildConstructionPdfFileName } from "@/lib/constructionPdf";
 import { buildDeliveryPackageFileName, buildDeliveryPackageZip, buildRenderingExportFileName } from "@/lib/deliveryPackage";
 import { trpc } from "@/lib/trpc";
 import { toast as sonnerToast } from "sonner";
@@ -90,6 +91,7 @@ export default function DesignDetail() {
   const [viewer, setViewer] = useState<ViewerState | null>(null);
   const [regeneratingArea, setRegeneratingArea] = useState<string | null>(null);
   const [isDownloadingPackage, setIsDownloadingPackage] = useState(false);
+  const [isDownloadingConstructionPdf, setIsDownloadingConstructionPdf] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: design } = trpc.designs.get.useQuery(
@@ -386,6 +388,46 @@ export default function DesignDetail() {
     }
   };
 
+  const handleDownloadConstructionPdf = async () => {
+    if (!design) return;
+
+    try {
+      setIsDownloadingConstructionPdf(true);
+      const pdf = buildConstructionPdfDocument({
+        projectId: projectIdNum,
+        designId: designIdNum,
+        projectName: `项目 ${projectIdNum}`,
+        styleTheme: design.styleTheme,
+        colorScheme: design.colorScheme,
+        budgetRange: design.budgetRange,
+        cadParameters: (() => {
+          try {
+            const params = typeof design.parameters === "string" ? JSON.parse(design.parameters) : {};
+            return (params?.cadParameters || params) as Record<string, unknown>;
+          } catch {
+            return {};
+          }
+        })(),
+        notes: [
+          "当前导出为施工说明 PDF，适用于方案评审、交付归档和施工前沟通。",
+          "DWG 结构化施工图仍保留为后续扩展入口，当前版本尚未生成 CAD 级别图纸。",
+          "请结合当前效果图、预算报表与项目 CAD 参数一起审阅。",
+        ],
+      });
+      pdf.save(buildConstructionPdfFileName(projectIdNum, designIdNum));
+      sonnerToast.success("施工说明 PDF 已导出", {
+        description: "当前版本先提供可下载的施工说明 PDF，DWG 图纸入口将继续保留为后续扩展能力。",
+      });
+    } catch (error) {
+      console.error(error);
+      sonnerToast.error("施工说明 PDF 导出失败", {
+        description: "请稍后重试，或先使用交付包下载获取当前效果图与预算报表。",
+      });
+    } finally {
+      setIsDownloadingConstructionPdf(false);
+    }
+  };
+
   const handleGenerateRenderings = async () => {
     if (!design) return;
     await generateRenderingsMutation.mutateAsync({ designId: designIdNum });
@@ -463,7 +505,16 @@ export default function DesignDetail() {
               <h1 className="text-3xl font-bold text-white">{design.styleTheme || "设计方案"}</h1>
               <p className="text-slate-400 mt-1">设计方案详情与实时迭代</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                onClick={handleDownloadConstructionPdf}
+                disabled={isDownloadingConstructionPdf}
+              >
+                {isDownloadingConstructionPdf ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                {isDownloadingConstructionPdf ? "导出中..." : "导出施工说明 PDF"}
+              </Button>
               <Button
                 variant="outline"
                 className="border-slate-600 text-slate-300 hover:bg-slate-700"
