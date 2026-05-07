@@ -75,6 +75,15 @@ const DESIGN_STYLES: DesignStyle[] = [
     budgetRange: { min: 100, max: 130 },
   },
   {
+    id: "retro_gaming",
+    name: "复古电竞",
+    theme: "Retro Gaming",
+    colorScheme: "Brown + Blue",
+    description: "怀旧感 + 现代、独特风格",
+    features: ["Retro elements", "Modern touches", "Brown tones", "Blue accents"],
+    budgetRange: { min: 110, max: 140 },
+  },
+  {
     id: "trendy_bar",
     name: "潮流酒吧",
     theme: "Trendy Bar",
@@ -92,25 +101,19 @@ const DESIGN_STYLES: DesignStyle[] = [
     features: ["Neon lights", "KTV atmosphere", "Dynamic RGB", "Party vibes", "Cool neon glow"],
     budgetRange: { min: 180, max: 280 },
   },
-  {
-    id: "retro_gaming",
-    name: "复古电竞",
-    theme: "Retro Gaming",
-    colorScheme: "Brown + Blue",
-    description: "怀旧感 + 现代、独特风格",
-    features: ["Retro elements", "Modern touches", "Brown tones", "Blue accents"],
-    budgetRange: { min: 110, max: 140 },
-  },
-  {
-    id: "scifi_theater",
-    name: "科幻影院",
-    theme: "Sci-Fi Theater",
-    colorScheme: "Deep Blue + Purple",
-    description: "沉浸式体验、未来感、视觉冲击",
-    features: ["Immersive experience", "Purple lighting", "Futuristic design", "Theater-like"],
-    budgetRange: { min: 160, max: 210 },
-  },
 ];
+
+const SUPPORTED_GENERATION_STYLE_ORDER = [
+  "cyberpunk",
+  "future_tech",
+  "dark_gaming",
+  "minimalist",
+  "retro_gaming",
+  "trendy_bar",
+  "party_k",
+] as const;
+
+const STYLE_MAP = new Map(DESIGN_STYLES.map((style) => [style.id, style]));
 
 /**
  * 生成设计方案
@@ -118,7 +121,6 @@ const DESIGN_STYLES: DesignStyle[] = [
 export function generateDesigns(request: DesignGenerationRequest): GeneratedDesign[] {
   const designs: GeneratedDesign[] = [];
 
-  // 根据预算范围筛选风格
   const budgetMultiplier = {
     economy: 0.8,
     standard: 1.0,
@@ -126,9 +128,7 @@ export function generateDesigns(request: DesignGenerationRequest): GeneratedDesi
   };
 
   const multiplier = budgetMultiplier[request.budgetRange];
-
-  // 生成5-8个设计方案
-  const selectedStyles = selectStyles('multicolor', 6);
+  const selectedStyles = selectStyles(7);
 
   selectedStyles.forEach((style) => {
     const design: GeneratedDesign = {
@@ -159,23 +159,12 @@ export function generateDesigns(request: DesignGenerationRequest): GeneratedDesi
 }
 
 /**
- * 根据颜色主题选择风格
+ * 选择当前产品支持的设计风格集合
  */
-function selectStyles(colorTheme: string, count: number): DesignStyle[] {
-  const colorMap: Record<string, string[]> = {
-    blue: ["future_tech", "scifi_theater", "retro_gaming"],
-    purple: ["scifi_theater", "party_k", "cyberpunk"],
-    green: ["minimalist", "cyberpunk", "trendy_bar"],
-    red: ["dark_gaming", "party_k", "cyberpunk"],
-    multicolor: ["trendy_bar", "party_k", "scifi_theater"],
-  };
-
-  const preferredStyles = colorMap[colorTheme] || [];
-  const allStyles = DESIGN_STYLES.filter((s) => !preferredStyles.includes(s.id)).concat(
-    DESIGN_STYLES.filter((s) => preferredStyles.includes(s.id))
-  );
-
-  return allStyles.slice(0, count);
+function selectStyles(count: number): DesignStyle[] {
+  return SUPPORTED_GENERATION_STYLE_ORDER.map((styleId) => STYLE_MAP.get(styleId)).filter(
+    (style): style is DesignStyle => Boolean(style)
+  ).slice(0, count);
 }
 
 /**
@@ -218,5 +207,5 @@ export function getAvailableStyles(): DesignStyle[] {
  * 获取特定风格的详细信息
  */
 export function getStyleDetails(styleId: string): DesignStyle | null {
-  return DESIGN_STYLES.find((s) => s.id === styleId) || null;
+  return STYLE_MAP.get(styleId) || null;
 }

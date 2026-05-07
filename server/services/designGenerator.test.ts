@@ -24,6 +24,24 @@ describe("Design Generator", () => {
     expect(designs.length).toBeLessThanOrEqual(10);
   });
 
+  it("should generate the 7 supported styles including Party K", () => {
+    const designs = generateDesigns({
+      cadParameters: mockCADParams,
+      budgetRange: "standard",
+      rgbDensity: "medium",
+    });
+
+    expect(designs.map((design) => design.styleId)).toEqual([
+      "cyberpunk",
+      "future_tech",
+      "dark_gaming",
+      "minimalist",
+      "retro_gaming",
+      "trendy_bar",
+      "party_k",
+    ]);
+  });
+
   it("should generate designs with correct structure", () => {
     const designs = generateDesigns({
       cadParameters: mockCADParams,
