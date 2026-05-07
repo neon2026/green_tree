@@ -107,6 +107,10 @@ export default function DesignDetail() {
     { designId: designIdNum },
     { enabled: isValidDesignId }
   );
+  const constructionQuery = trpc.constructions.getByDesign.useQuery(
+    { designId: designIdNum },
+    { enabled: isValidDesignId }
+  );
 
   const generateRenderingsMutation = trpc.renderings.generate.useMutation({
     onSuccess: async (result) => {
@@ -352,6 +356,20 @@ export default function DesignDetail() {
     }
   };
 
+  const handleOpenConstructionFile = (url: string | null | undefined, label: string) => {
+    if (!url) {
+      sonnerToast.warning(`${label} 暂不可用`, {
+        description: "当前设计还没有可直接下载的施工图文件记录。",
+      });
+      return;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
+    sonnerToast.success(`${label} 已开始下载`, {
+      description: "已打开对应施工图文件链接。",
+    });
+  };
+
   const handleDownloadPackage = async () => {
     if (!design) return;
     setIsDownloadingPackage(true);
@@ -506,6 +524,24 @@ export default function DesignDetail() {
               <p className="text-slate-400 mt-1">设计方案详情与实时迭代</p>
             </div>
             <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                onClick={() => handleOpenConstructionFile(constructionQuery.data?.dwgFileUrl, "DWG 施工图")}
+                disabled={constructionQuery.isLoading || !constructionQuery.data?.hasDwg}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                下载 DWG 施工图
+              </Button>
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                onClick={() => handleOpenConstructionFile(constructionQuery.data?.pdfFileUrl, "施工图 PDF")}
+                disabled={constructionQuery.isLoading || !constructionQuery.data?.hasPdf}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                下载施工图 PDF
+              </Button>
               <Button
                 variant="outline"
                 className="border-slate-600 text-slate-300 hover:bg-slate-700"

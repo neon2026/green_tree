@@ -26,9 +26,9 @@ describe("constructionPdf", () => {
 
     expect(lines).toContain("项目名称：绿树电竞测试项目");
     expect(lines).toContain("风格主题：Party K");
-    expect(lines).toContain("- 总面积：800 ㎡");
-    expect(lines).toContain("- 机位数量：48");
-    expect(lines).toContain("- 包间数量：6");
-    expect(lines.some((line) => line.includes("DWG 结构化施工图仍保留为后续扩展入口"))).toBe(true);
+    expect(lines).toContain("- 平面布局示意：总面积 800 ㎡，覆盖门头、通道、吧台、舞台、散座、包间、卫生间。");
+    expect(lines).toContain("- 机位与包间配置：机位 48 台，包间 6 间。");
+    expect(lines).toContain("- 区域配置表：包含吧台 80 ㎡、大厅 420 ㎡、包间 160 ㎡。");
+    expect(lines.some((line) => line.includes("constructions 表中已有 DWG / PDF 真正图纸文件"))).toBe(true);
   });
 });
