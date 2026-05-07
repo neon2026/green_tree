@@ -226,7 +226,7 @@ export default function DesignGenerator() {
                     <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors mb-2">
                       {design.styleName}
                     </h3>
-                    <p className="text-slate-400 text-sm mb-4">{design.styleId}</p>
+                    <p className="text-slate-400 text-sm mb-4">{design.theme || design.styleId}</p>
 
                     <div className="space-y-2 mb-4">
                       <div className="flex justify-between text-sm">

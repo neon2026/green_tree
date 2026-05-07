@@ -11,7 +11,7 @@ import {
   getDesignById,
   updateDesign,
 } from "../db-helpers";
-import { generateDesigns, getAvailableStyles } from "../services/designGenerator";
+import { generateDesigns, getAvailableStyles, getStyleDetails } from "../services/designGenerator";
 import { parseCADFile, validateCADParameters } from "../services/cadParser";
 
 export const projectsRouter = router({
@@ -216,7 +216,16 @@ export const designsRouter = router({
   list: protectedProcedure
     .input(z.object({ projectId: z.number() }))
     .query(async ({ input }) => {
-      return await getProjectDesigns(input.projectId);
+      const designs = await getProjectDesigns(input.projectId);
+      return designs.map((design) => {
+        const storedStyleId = design.styleTheme || "party_k";
+        const styleDetails = getStyleDetails(storedStyleId);
+        return {
+          ...design,
+          styleId: storedStyleId,
+          styleTheme: styleDetails?.name || storedStyleId,
+        };
+      });
     }),
 
   /**
@@ -229,7 +238,13 @@ export const designsRouter = router({
       if (!design) {
         throw new Error("设计方案不存在");
       }
-      return design;
+      const storedStyleId = design.styleTheme || "party_k";
+      const styleDetails = getStyleDetails(storedStyleId);
+      return {
+        ...design,
+        styleId: storedStyleId,
+        styleTheme: styleDetails?.name || storedStyleId,
+      };
     }),
 
   /**

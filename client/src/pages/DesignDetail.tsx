@@ -15,11 +15,13 @@ interface ChatMessage {
 
 interface RenderingItem {
   id?: number;
+  designId?: number;
   area: string;
   url: string;
   label: string;
   version?: number;
   createdAt?: string | null;
+  styleTheme?: string;
 }
 
 interface ViewerState {
@@ -36,6 +38,32 @@ const renderingAreas: RenderingItem[] = [
   { area: "private_room", label: "包间", url: "" },
   { area: "restroom", label: "卫生间", url: "" },
 ];
+
+function buildFallbackImage(label: string) {
+  const svg = `
+    <svg width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#111827" />
+          <stop offset="55%" stop-color="#1e293b" />
+          <stop offset="100%" stop-color="#0f172a" />
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="35%" r="45%">
+          <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.45" />
+          <stop offset="100%" stop-color="#a855f7" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="1280" height="720" fill="url(#bg)" />
+      <rect width="1280" height="720" fill="url(#glow)" />
+      <rect x="48" y="48" width="1184" height="624" rx="28" fill="none" stroke="#22d3ee" stroke-opacity="0.45" />
+      <text x="640" y="320" fill="#f8fafc" font-size="56" font-family="Arial, sans-serif" text-anchor="middle">${label}效果图</text>
+      <text x="640" y="392" fill="#94a3b8" font-size="24" font-family="Arial, sans-serif" text-anchor="middle">Party K · 夜场霓虹 · KTV派对氛围 · 潮酷炫光视觉</text>
+      <text x="640" y="448" fill="#22d3ee" font-size="22" font-family="Arial, sans-serif" text-anchor="middle">原图地址加载失败，当前展示为预览占位图</text>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
 
 export default function DesignDetail() {
   const { projectId, designId } = useParams<{ projectId: string; designId: string }>();
@@ -137,6 +165,13 @@ export default function DesignDetail() {
       images: availableImages,
       index: nextIndex >= 0 ? nextIndex : 0,
     });
+  };
+
+  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>, label: string) => {
+    const target = event.currentTarget;
+    if (target.dataset.fallbackApplied === "true") return;
+    target.dataset.fallbackApplied = "true";
+    target.src = buildFallbackImage(label);
   };
 
   const handleGenerateRenderings = async () => {
@@ -260,7 +295,7 @@ export default function DesignDetail() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-bold text-white">室内效果图</h2>
-                  <p className="text-sm text-slate-400 mt-1">支持查看历史版本，并可对单张区域图单独重新生成，不影响其他图片。</p>
+                  <p className="text-sm text-slate-400 mt-1">支持查看当前项目下全部历史版本，并可对单张区域图单独重新生成，不影响其他图片。</p>
                 </div>
                 <Button
                   onClick={handleGenerateRenderings}
@@ -304,6 +339,7 @@ export default function DesignDetail() {
                               <img
                                 src={rendering.url}
                                 alt={rendering.label}
+                                onError={(event) => handleImageError(event, rendering.label)}
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                               />
                             ) : (
@@ -366,7 +402,7 @@ export default function DesignDetail() {
                       </div>
                     ) : historyRenderings.length === 0 ? (
                       <div className="text-center py-12 text-slate-400">
-                        暂无历史图片，先生成一组效果图后，这里会显示所有版本记录。
+                        暂无历史图片，先生成一组效果图后，这里会显示当前项目下的全部版本记录。
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -381,13 +417,26 @@ export default function DesignDetail() {
                               onClick={() => openViewer(historyRenderings, index)}
                             >
                               <div className="aspect-video bg-slate-900 overflow-hidden">
-                                <img src={rendering.url} alt={rendering.label} className="w-full h-full object-cover" />
+                                <img
+                                  src={rendering.url}
+                                  alt={rendering.label}
+                                  onError={(event) => handleImageError(event, rendering.label)}
+                                  className="w-full h-full object-cover"
+                                />
                               </div>
                             </button>
                             <div className="p-4 space-y-2">
                               <div className="flex items-center justify-between gap-3">
                                 <p className="text-white font-medium">{rendering.label}</p>
                                 <span className="text-xs text-emerald-400">V{rendering.version || 1}</span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2 text-xs">
+                                <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-emerald-300">
+                                  设计 #{rendering.designId || designIdNum}
+                                </span>
+                                {rendering.styleTheme && (
+                                  <span className="rounded-full bg-slate-700 px-2 py-1 text-slate-300">{rendering.styleTheme}</span>
+                                )}
                               </div>
                               <p className="text-xs text-slate-400">
                                 {rendering.createdAt ? new Date(rendering.createdAt).toLocaleString() : "时间未知"}
@@ -533,7 +582,12 @@ export default function DesignDetail() {
               </div>
             </div>
             <div className="bg-black flex items-center justify-center max-h-[calc(90vh-80px)] overflow-auto">
-              <img src={viewerImage.url} alt={viewerImage.label} className="w-full h-full object-contain max-h-[calc(90vh-80px)]" />
+              <img
+                src={viewerImage.url}
+                alt={viewerImage.label}
+                onError={(event) => handleImageError(event, viewerImage.label)}
+                className="w-full h-full object-contain max-h-[calc(90vh-80px)]"
+              />
             </div>
           </div>
         </div>

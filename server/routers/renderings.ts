@@ -9,6 +9,7 @@ import {
   createRendering,
   getDesignById,
   getLatestRenderingsByArea,
+  getProjectRenderingHistory,
   getRenderingHistory,
 } from "../db-helpers";
 
@@ -46,21 +47,34 @@ function buildCadParameters(raw: unknown) {
   };
 }
 
+function normalizeStyleTheme(styleTheme?: string | null) {
+  if (!styleTheme) return "Party K";
+  if (styleTheme === "party_k" || styleTheme === "partyk") return "Party K";
+  return styleTheme
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function normalizeRendering(record: {
   id?: number;
+  designId?: number | null;
   areaType?: string | null;
   imageUrl?: string | null;
   version?: number | null;
   createdAt?: Date | null;
+  styleTheme?: string | null;
 }) {
   const area = (record.areaType || "entrance") as RenderingAreaType;
   return {
     id: record.id ?? 0,
+    designId: record.designId ?? 0,
     area,
     label: areaLabels[area] || area,
     url: record.imageUrl || "",
     version: record.version ?? 1,
     createdAt: record.createdAt?.toISOString?.() ?? null,
+    styleTheme: normalizeStyleTheme(record.styleTheme),
   };
 }
 
@@ -140,13 +154,20 @@ export const renderingsRouter = router({
     )
     .query(async ({ input }) => {
       try {
+        const design = await getDesignById(input.designId);
+        if (!design) {
+          throw new Error("设计方案不存在");
+        }
+
         const [latestRenderings, history] = await Promise.all([
           getLatestRenderingsByArea(input.designId),
-          getRenderingHistory(input.designId),
+          getProjectRenderingHistory(design.projectId),
         ]);
 
         return {
-          renderings: latestRenderings.map(normalizeRendering),
+          renderings: latestRenderings.map((item) =>
+            normalizeRendering({ ...item, styleTheme: design.styleTheme })
+          ),
           history: history.map(normalizeRendering),
         };
       } catch (error) {

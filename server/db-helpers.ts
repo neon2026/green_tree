@@ -237,3 +237,24 @@ export async function getLatestRenderingsByArea(designId: number) {
   
   return Array.from(latestByArea.values());
 }
+
+export async function getProjectRenderingHistory(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .select({
+      id: renderings.id,
+      designId: renderings.designId,
+      imageUrl: renderings.imageUrl,
+      imageKey: renderings.imageKey,
+      areaType: renderings.areaType,
+      version: renderings.version,
+      createdAt: renderings.createdAt,
+      styleTheme: designs.styleTheme,
+    })
+    .from(renderings)
+    .innerJoin(designs, eq(renderings.designId, designs.id))
+    .where(eq(designs.projectId, projectId))
+    .orderBy(desc(renderings.createdAt));
+}
