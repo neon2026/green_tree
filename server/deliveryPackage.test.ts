@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildDeliveryPackageFileName, buildDeliveryPackageMetadata, buildDeliveryPackageZip } from "../client/src/lib/deliveryPackage";
+import { buildDeliveryPackageFileName, buildDeliveryPackageMetadata, buildDeliveryPackageZip, buildRenderingExportFileName } from "../client/src/lib/deliveryPackage";
 
 describe("deliveryPackage", () => {
-  it("builds a stable delivery package file name", () => {
+  it("builds stable delivery and rendering export file names", () => {
     expect(buildDeliveryPackageFileName("Party K", 390049)).toBe("design-390049-Party-K");
     expect(buildDeliveryPackageFileName(undefined, 12)).toBe("design-12-设计方案");
+    expect(buildRenderingExportFileName("entrance", 3, "png")).toBe("entrance-v3.png");
+    expect(buildRenderingExportFileName("bar", undefined, "jpg")).toBe("bar-v1.jpg");
   });
 
   it("marks fallback renderings in metadata", () => {

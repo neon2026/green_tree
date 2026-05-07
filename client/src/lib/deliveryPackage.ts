@@ -38,6 +38,10 @@ export function buildDeliveryPackageFileName(styleTheme: string | undefined, des
   return `design-${designId}-${rawTheme}`;
 }
 
+export function buildRenderingExportFileName(area: string, version: number | undefined, format: "png" | "jpg") {
+  return `${area}-v${version || 1}.${format}`;
+}
+
 export function buildDeliveryPackageMetadata(input: DeliveryPackageInput): DeliveryPackageMetadata {
   const exportedAt = (input.exportedAt || new Date()).toISOString();
 

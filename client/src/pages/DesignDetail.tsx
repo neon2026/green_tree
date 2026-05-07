@@ -4,7 +4,7 @@ import { AlertCircle, Download, History, Image as ImageIcon, Loader2, RotateCcw,
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { buildDeliveryPackageFileName, buildDeliveryPackageZip } from "@/lib/deliveryPackage";
+import { buildDeliveryPackageFileName, buildDeliveryPackageZip, buildRenderingExportFileName } from "@/lib/deliveryPackage";
 import { trpc } from "@/lib/trpc";
 import { toast as sonnerToast } from "sonner";
 
@@ -235,6 +235,62 @@ export default function DesignDetail() {
     link.click();
     link.remove();
     URL.revokeObjectURL(objectUrl);
+  };
+
+  const convertImageToJpegBlob = async (url: string) => {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("当前图片暂时无法转换为 JPG，请稍后重试。"));
+      img.src = url;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("浏览器暂不支持当前 JPG 导出能力。");
+    }
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("JPG 导出失败，请稍后重试。"));
+          return;
+        }
+        resolve(blob);
+      }, "image/jpeg", 0.92);
+    });
+  };
+
+  const handleDownloadRendering = async (rendering: RenderingItem, format: "png" | "jpg") => {
+    try {
+      if (format === "png") {
+        const response = await fetch(rendering.url);
+        if (!response.ok) {
+          throw new Error(`下载资源失败：${response.status} ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        downloadBlob(blob, buildRenderingExportFileName(rendering.area, rendering.version, "png"));
+      } else {
+        const blob = await convertImageToJpegBlob(rendering.url);
+        downloadBlob(blob, buildRenderingExportFileName(rendering.area, rendering.version, "jpg"));
+      }
+
+      sonnerToast.success(`已开始下载${format.toUpperCase()}`, {
+        description: `${rendering.label} 已导出为 ${format.toUpperCase()} 文件。`,
+      });
+    } catch (error) {
+      sonnerToast.error(`${format.toUpperCase()} 导出失败`, {
+        description: error instanceof Error ? error.message : "请稍后重试。",
+      });
+    }
   };
 
   const handleDownloadPackage = async () => {
@@ -571,14 +627,25 @@ export default function DesignDetail() {
                               {isFallbackRendering(rendering) && (
                                 <p className="text-xs text-amber-300">该历史记录为 fallback 占位图，图像服务恢复后可重新生成真实图片。</p>
                               )}
-                              <a
-                                href={rendering.url}
-                                download={`${rendering.area}-v${rendering.version || 1}.png`}
-                                className="inline-flex items-center text-xs text-slate-300 hover:text-white transition-colors"
-                              >
-                                <Download className="w-3.5 h-3.5 mr-1.5" />
-                                下载该历史版本
-                              </a>
+                              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadRendering(rendering, "png")}
+                                  className="inline-flex items-center hover:text-white transition-colors"
+                                >
+                                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                                  下载 PNG
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadRendering(rendering, "jpg")}
+                                  className="inline-flex items-center hover:text-white transition-colors"
+                                >
+                                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                                  导出 JPG
+                                </button>
+                              </div>
+
                             </div>
                           </div>
                         ))}
@@ -673,13 +740,20 @@ export default function DesignDetail() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <a
-                  href={viewerImage.url}
-                  download={`${viewerImage.area}-v${viewerImage.version || 1}.png`}
+                <button
+                  type="button"
                   className="px-3 py-1.5 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700"
+                  onClick={() => handleDownloadRendering(viewerImage, "png")}
                 >
-                  下载
-                </a>
+                  下载 PNG
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700"
+                  onClick={() => handleDownloadRendering(viewerImage, "jpg")}
+                >
+                  导出 JPG
+                </button>
                 <button
                   type="button"
                   className="px-3 py-1.5 rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700"
