@@ -3,7 +3,9 @@ import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Wand2, Check, AlertCircle } from "lucide-react";
+import { toast as sonnerToast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { buildBatchRenderingToastMessage, runBatchRenderingGeneration } from "@/lib/batchRenderings";
 
 type BudgetRange = "economy" | "standard" | "premium";
 type RGBDensity = "low" | "medium" | "high";
@@ -32,6 +34,7 @@ export default function DesignGenerator() {
   const [step, setStep] = useState<"config" | "generating" | "results">("config");
   const [budgetRange, setBudgetRange] = useState<BudgetRange>("standard");
   const [rgbDensity, setRGBDensity] = useState<RGBDensity>("medium");
+  const [isBatchRendering, setIsBatchRendering] = useState(false);
 
   // API Calls
   const { data: project } = trpc.projects.get.useQuery(
@@ -63,18 +66,47 @@ export default function DesignGenerator() {
   }
 
   const generateMutation = trpc.designs.generate.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       setStep("results");
     },
   });
-
-  const handleGenerate = () => {
+  const generateRenderingMutation = trpc.renderings.generate.useMutation();
+   const handleGenerate = () => {
     setStep("generating");
     generateMutation.mutate({
       projectId: projectIdNum,
       budgetRange,
       rgbDensity,
     });
+  };
+
+  const handleBatchGenerateRenderings = async () => {
+    const designs = generateMutation.data?.designs || [];
+    if (designs.length === 0) {
+      sonnerToast.error("请先生成设计方案，再批量生成效果图。");
+      return;
+    }
+
+    setIsBatchRendering(true);
+
+    try {
+      const summary = await runBatchRenderingGeneration(
+        designs.map((design) => design.databaseId),
+        async (designId) => generateRenderingMutation.mutateAsync({ designId }),
+      );
+      const toastPayload = buildBatchRenderingToastMessage(summary);
+
+      if (toastPayload.level === "warning") {
+        sonnerToast.warning(toastPayload.message);
+      } else {
+        sonnerToast.success(toastPayload.message);
+      }
+    } catch (error) {
+      console.error("Batch rendering generation failed", error);
+      sonnerToast.error("批量生成效果图失败，请稍后重试。");
+    } finally {
+      setIsBatchRendering(false);
+    }
   };
 
   return (
@@ -273,17 +305,34 @@ export default function DesignGenerator() {
               ))}
             </div>
 
-            <div className="mt-8 flex gap-4">
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
               <Button
                 onClick={() => setStep("config")}
                 variant="outline"
-                className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
               >
                 重新配置
               </Button>
               <Button
+                onClick={handleBatchGenerateRenderings}
+                disabled={isBatchRendering || generateRenderingMutation.isPending}
+                className="bg-emerald-500 hover:bg-emerald-600"
+              >
+                {isBatchRendering ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    批量生成效果图中...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    批量生成 7 套效果图
+                  </>
+                )}
+              </Button>
+              <Button
                 onClick={() => setLocation(`/projects/${projectIdNum}`)}
-                className="flex-1 bg-emerald-500 hover:bg-emerald-600"
+                className="bg-slate-700 text-white hover:bg-slate-600"
               >
                 返回项目
               </Button>
