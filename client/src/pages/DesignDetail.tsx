@@ -490,10 +490,16 @@ export default function DesignDetail() {
                                 {rendering.styleTheme && (
                                   <span className="rounded-full bg-slate-700 px-2 py-1 text-slate-300">{rendering.styleTheme}</span>
                                 )}
+                                {isFallbackRendering(rendering) && (
+                                  <span className="rounded-full bg-amber-500/15 px-2 py-1 text-amber-200">占位图</span>
+                                )}
                               </div>
                               <p className="text-xs text-slate-400">
                                 {rendering.createdAt ? new Date(rendering.createdAt).toLocaleString() : "时间未知"}
                               </p>
+                              {isFallbackRendering(rendering) && (
+                                <p className="text-xs text-amber-300">该历史记录为 fallback 占位图，图像服务恢复后可重新生成真实图片。</p>
+                              )}
                               <a
                                 href={rendering.url}
                                 download={`${rendering.area}-v${rendering.version || 1}.png`}
