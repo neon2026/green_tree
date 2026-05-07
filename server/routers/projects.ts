@@ -11,7 +11,12 @@ import {
   getDesignById,
   updateDesign,
 } from "../db-helpers";
-import { generateDesigns, getAvailableStyles, getStyleDetails } from "../services/designGenerator";
+import {
+  generateDesigns,
+  getAvailableStyles,
+  getRenderingThemeForStyle,
+  getStyleDetails,
+} from "../services/designGenerator";
 import { parseCADFile, validateCADParameters } from "../services/cadParser";
 
 export const projectsRouter = router({
@@ -201,6 +206,7 @@ export const designsRouter = router({
         savedDesigns.push({
           ...design,
           databaseId: result[0],
+          renderingTheme: getRenderingThemeForStyle(design.styleId),
         });
       }
 
@@ -224,6 +230,7 @@ export const designsRouter = router({
           ...design,
           styleId: storedStyleId,
           styleTheme: styleDetails?.name || storedStyleId,
+          renderingTheme: getRenderingThemeForStyle(storedStyleId),
         };
       });
     }),

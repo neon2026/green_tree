@@ -114,6 +114,15 @@ const SUPPORTED_GENERATION_STYLE_ORDER = [
 ] as const;
 
 const STYLE_MAP = new Map(DESIGN_STYLES.map((style) => [style.id, style]));
+const RENDERING_THEME_BY_STYLE_ID: Record<string, string> = {
+  cyberpunk: "cyberpunk",
+  future_tech: "futuristic",
+  dark_gaming: "luxury",
+  minimalist: "minimalist",
+  retro_gaming: "retro",
+  trendy_bar: "neon",
+  party_k: "party_k",
+};
 
 /**
  * 生成设计方案
@@ -208,4 +217,12 @@ export function getAvailableStyles(): DesignStyle[] {
  */
 export function getStyleDetails(styleId: string): DesignStyle | null {
   return STYLE_MAP.get(styleId) || null;
+}
+
+export function getRenderingThemeForStyle(styleId: string): string {
+  return RENDERING_THEME_BY_STYLE_ID[styleId] || "party_k";
+}
+
+export function getSupportedGenerationStyleIds(): string[] {
+  return [...SUPPORTED_GENERATION_STYLE_ORDER];
 }

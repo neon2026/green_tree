@@ -165,7 +165,7 @@ export default function DesignGenerator() {
                   ) : (
                     <>
                       <Wand2 className="w-5 h-5 mr-2" />
-                      生成5-10种设计方案
+                      生成 7 种设计方案
                     </>
                   )}
                 </Button>
@@ -195,7 +195,7 @@ export default function DesignGenerator() {
 
                 <div className="mt-6 p-4 bg-slate-700 rounded-lg">
                   <p className="text-sm text-slate-300">
-                    系统将为您生成5-10种不同风格的设计方案，每种方案都包含效果图、参数和施工图。
+                    系统将为您生成当前支持的 7 种设计方案风格；每种方案都会保留独立的渲染主题映射，便于后续进入详情页继续生成对应效果图。
                   </p>
                 </div>
               </Card>
@@ -213,9 +213,20 @@ export default function DesignGenerator() {
 
         {step === "results" && generateMutation.data && (
           <div>
-            <h2 className="text-2xl font-bold text-white mb-8">生成完成！</h2>
-
+            <h2 className="text-2xl font-bold text-white mb-6">生成完成！</h2>
+            <Card className="mb-6 border-amber-500/30 bg-amber-500/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="mt-0.5 h-5 w-5 text-amber-300" />
+                <div className="space-y-1 text-sm">
+                  <p className="font-medium text-amber-100">已生成 7 套风格方案，并完成对应渲染主题映射。</p>
+                  <p className="text-amber-200/90">
+                    当前可逐个进入方案详情页生成对应效果图；若内置图像服务出现额度受限，系统会先展示占位图并保留后续重生成入口。
+                  </p>
+                </div>
+              </div>
+            </Card>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
               {(generateMutation.data.designs || []).map((design: any) => (
                 <Card
                   key={design.databaseId}
@@ -226,16 +237,22 @@ export default function DesignGenerator() {
                     <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors mb-2">
                       {design.styleName}
                     </h3>
-                    <p className="text-slate-400 text-sm mb-4">{design.theme || design.styleId}</p>
-
+                    <p className="text-slate-400 text-sm mb-2">{design.theme || design.styleId}</p>
+                    <div className="mb-4 flex flex-wrap gap-2 text-xs">
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-emerald-300">
+                        渲染主题：{design.renderingTheme || design.styleId}
+                      </span>
+                      <span className="rounded-full bg-slate-700 px-2 py-1 text-slate-300">可继续生成对应效果图</span>
+                    </div>
                     <div className="space-y-2 mb-4">
+
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">颜色主题</span>
-                        <span className="text-white">{design.colorTheme}</span>
+                        <span className="text-white">{design.parameters?.colorScheme || design.colorScheme || "未设置"}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">预算等级</span>
-                        <span className="text-white">{design.budgetRange}</span>
+                        <span className="text-white">{design.budgetRange || budgetRange}</span>
                       </div>
 
                     </div>

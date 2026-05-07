@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { generateDesigns, getAvailableStyles } from "./designGenerator";
+import {
+  generateDesigns,
+  getAvailableStyles,
+  getRenderingThemeForStyle,
+  getSupportedGenerationStyleIds,
+} from "./designGenerator";
 import type { CADParameters } from "./cadParser";
 
 describe("Design Generator", () => {
@@ -112,5 +117,20 @@ describe("Design Generator", () => {
     expect(partyK?.name).toBe("Party K");
     expect(partyK?.theme).toBe("Party K");
     expect(partyK?.features.join(" ")).toContain("Neon");
+  });
+
+  it("should provide stable supported style ids and rendering theme mapping", () => {
+    expect(getSupportedGenerationStyleIds()).toEqual([
+      "cyberpunk",
+      "future_tech",
+      "dark_gaming",
+      "minimalist",
+      "retro_gaming",
+      "trendy_bar",
+      "party_k",
+    ]);
+    expect(getRenderingThemeForStyle("future_tech")).toBe("futuristic");
+    expect(getRenderingThemeForStyle("trendy_bar")).toBe("neon");
+    expect(getRenderingThemeForStyle("unknown_style")).toBe("party_k");
   });
 });
