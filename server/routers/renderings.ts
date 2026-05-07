@@ -6,12 +6,15 @@ import {
   type RenderingAreaType,
 } from "../services/renderingGenerator";
 import {
+  createIteration,
   createRendering,
   getDesignById,
   getLatestRenderingsByArea,
   getProjectRenderingHistory,
   getRenderingHistory,
+  updateDesign,
 } from "../db-helpers";
+import { parseIterationInstruction } from "../services/iterationInstruction";
 
 const renderingAreas = [
   "entrance",
@@ -95,6 +98,37 @@ function normalizeRendering(record: {
   };
 }
 
+async function persistGeneratedRendering({
+  designId,
+  area,
+  version,
+  rendering,
+}: {
+  designId: number;
+  area: RenderingAreaType;
+  version: number;
+  rendering: Awaited<ReturnType<typeof generateRendering>>;
+}) {
+  const result = await createRendering({
+    designId,
+    imageUrl: rendering.url,
+    imageKey: `design_${designId}_${area}_v${version}`,
+    areaType: area,
+    version,
+  });
+
+  return {
+    id: (result as any).insertId || 0,
+    area,
+    label: areaLabels[area],
+    url: rendering.url,
+    prompt: rendering.prompt,
+    version,
+    isFallback: rendering.isFallback || false,
+    fallbackReason: rendering.fallbackReason || null,
+  };
+}
+
 export const renderingsRouter = router({
   generate: protectedProcedure
     .input(
@@ -135,24 +169,14 @@ export const renderingsRouter = router({
           const nextVersion = (versionCounter.get(rendering.area) || 0) + 1;
           versionCounter.set(rendering.area, nextVersion);
 
-          const result = await createRendering({
-            designId: input.designId,
-            imageUrl: rendering.url,
-            imageKey: `design_${input.designId}_${rendering.area}_v${nextVersion}`,
-            areaType: rendering.area,
-            version: nextVersion,
-          });
-
-          savedRenderings.push({
-            id: (result as any).insertId || 0,
-            area: rendering.area,
-            label: rendering.label,
-            url: rendering.url,
-            prompt: rendering.prompt,
-            version: nextVersion,
-            isFallback: rendering.isFallback || false,
-            fallbackReason: rendering.fallbackReason || null,
-          });
+          savedRenderings.push(
+            await persistGeneratedRendering({
+              designId: input.designId,
+              area: rendering.area as RenderingAreaType,
+              version: nextVersion,
+              rendering,
+            })
+          );
         }
 
         return {
@@ -163,6 +187,111 @@ export const renderingsRouter = router({
       } catch (error) {
         console.error("Failed to generate renderings:", error);
         throw new Error("效果图生成失败，请稍后重试");
+      }
+    }),
+
+  iterate: protectedProcedure
+    .input(
+      z.object({
+        designId: z.number(),
+        instruction: z.string().min(1, "请输入修改指令"),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const design = await getDesignById(input.designId);
+      if (!design) {
+        throw new Error("设计方案不存在");
+      }
+
+      try {
+        const parsed = parseIterationInstruction(input.instruction);
+        if (parsed.affectedAreas.length === 0) {
+          return {
+            success: false,
+            summary: parsed.summary,
+            affectedAreas: [] as RenderingAreaType[],
+            fallbackCount: 0,
+            warningMessage: "请明确说明要调整的区域，例如吧台、包间、舞台或整体空间。",
+            renderings: [],
+          };
+        }
+
+        const parameters = JSON.parse(design.parameters || "{}");
+        const cadParameters = buildCadParameters(parameters);
+        const styleTheme = (design.styleTheme === "partyk" ? "party_k" : design.styleTheme) || "party_k";
+        const colorScheme = parsed.extractedChanges.colorScheme || design.colorScheme || "neon purple and cyan";
+        const rgbDensity = parsed.extractedChanges.rgbDensity || cadParameters.rgbDensity;
+        const budgetRange = parsed.extractedChanges.budgetRange || design.budgetRange || "standard";
+        const history = await getRenderingHistory(input.designId);
+        const versionCounter = new Map<string, number>();
+
+        for (const item of history) {
+          const currentVersion = versionCounter.get(item.areaType || "") || 0;
+          versionCounter.set(item.areaType || "", Math.max(currentVersion, item.version || 1));
+        }
+
+        const nextParameters = {
+          ...parameters,
+          rgbDensity,
+          iterationHints: {
+            lastInstruction: input.instruction,
+            affectedAreas: parsed.affectedAreas,
+            extractedChanges: parsed.extractedChanges,
+          },
+        };
+
+        await updateDesign(input.designId, {
+          colorScheme,
+          budgetRange,
+          parameters: JSON.stringify(nextParameters),
+        });
+
+        const savedRenderings = [];
+        for (const area of parsed.affectedAreas) {
+          const rendering = await generateRendering({
+            styleTheme,
+            colorScheme,
+            area,
+            machineCount: cadParameters.machineCount,
+            roomCount: cadParameters.roomCount,
+            totalArea: cadParameters.totalArea,
+            rgbDensity,
+          });
+
+          const nextVersion = (versionCounter.get(area) || 0) + 1;
+          versionCounter.set(area, nextVersion);
+          savedRenderings.push(
+            await persistGeneratedRendering({
+              designId: input.designId,
+              area,
+              version: nextVersion,
+              rendering,
+            })
+          );
+        }
+
+        await createIteration({
+          designId: input.designId,
+          instruction: input.instruction,
+          parameterChanges: JSON.stringify({
+            affectedAreas: parsed.affectedAreas,
+            extractedChanges: parsed.extractedChanges,
+            summary: parsed.summary,
+          }),
+          imageUrl: savedRenderings[0]?.url || null,
+          imageKey: `iteration_${input.designId}_${Date.now()}`,
+        });
+
+        return {
+          success: true,
+          summary: parsed.summary,
+          affectedAreas: parsed.affectedAreas,
+          ...buildFallbackSummary(savedRenderings),
+          renderings: savedRenderings,
+        };
+      } catch (error) {
+        console.error("Failed to iterate renderings:", error);
+        throw new Error("局部重绘失败，请稍后重试");
       }
     }),
 
@@ -229,28 +358,18 @@ export const renderingsRouter = router({
           rgbDensity: cadParameters.rgbDensity,
         });
 
-        const result = await createRendering({
+        const savedRendering = await persistGeneratedRendering({
           designId: input.designId,
-          imageUrl: rendering.url,
-          imageKey: `design_${input.designId}_${input.area}_v${nextVersion}`,
-          areaType: input.area,
+          area: input.area,
           version: nextVersion,
+          rendering,
         });
 
         return {
           success: true,
           fallbackCount: rendering.isFallback ? 1 : 0,
           warningMessage: rendering.fallbackReason || null,
-          rendering: {
-            id: (result as any).insertId || 0,
-            area: input.area,
-            label: areaLabels[input.area],
-            url: rendering.url,
-            prompt: rendering.prompt,
-            version: nextVersion,
-            isFallback: rendering.isFallback || false,
-            fallbackReason: rendering.fallbackReason || null,
-          },
+          rendering: savedRendering,
         };
       } catch (error) {
         console.error("Failed to regenerate area rendering:", error);

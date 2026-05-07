@@ -139,6 +139,63 @@ export default function DesignDetail() {
     },
   });
 
+  const iterateMutation = trpc.renderings.iterate.useMutation({
+    onSuccess: async (result, variables) => {
+      if (!result.success) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `msg_${Date.now()}_assistant_warning`,
+            role: "assistant",
+            content: `${result.summary}\n\n${result.warningMessage || "请补充更明确的区域后再试。"}`,
+            timestamp: new Date(),
+          },
+        ]);
+        sonnerToast.warning("请补充更明确的修改区域", {
+          description: result.warningMessage || "例如吧台、包间、舞台或整体空间。",
+        });
+        return;
+      }
+
+      await utils.renderings.list.invalidate({ designId: designIdNum });
+      const assistantMessage: ChatMessage = {
+        id: `msg_${Date.now()}_assistant`,
+        role: "assistant",
+        content: result.warningMessage
+          ? `${result.summary}\n\n当前有 ${result.fallbackCount} 张图片仍为占位图：${result.warningMessage}`
+          : `${result.summary}\n\n已完成 ${result.affectedAreas.length} 个区域的局部重绘。`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+      setActiveTab("current");
+
+      if (result.warningMessage) {
+        sonnerToast.warning("局部重绘已完成，但部分图片仍为占位图", {
+          description: result.warningMessage,
+        });
+        return;
+      }
+
+      sonnerToast.success("局部重绘已完成", {
+        description: `已根据您的指令“${variables.instruction}”刷新相关区域效果图。`,
+      });
+    },
+    onError: (error) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg_${Date.now()}_assistant_error`,
+          role: "assistant",
+          content: `未能完成本次局部重绘：${error.message}`,
+          timestamp: new Date(),
+        },
+      ]);
+      sonnerToast.error("局部重绘失败", {
+        description: error.message,
+      });
+    },
+  });
+
   const currentRenderings = useMemo(() => {
     const latest = (renderingsQuery.data?.renderings || []) as RenderingItem[];
     return renderingAreas.map((area) => latest.find((item) => item.area === area.area) || area);
@@ -362,16 +419,14 @@ export default function DesignDetail() {
     setInputValue("");
     setIsGenerating(true);
 
-    setTimeout(() => {
-      const assistantMessage: ChatMessage = {
-        id: `msg_${Date.now() + 1}`,
-        role: "assistant",
-        content: `已理解您的指令：“${userMessage.content}”。后续可将这类指令直接用于单张图片重生成。`,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+    try {
+      await iterateMutation.mutateAsync({
+        designId: designIdNum,
+        instruction: userMessage.content,
+      });
+    } finally {
       setIsGenerating(false);
-    }, 1000);
+    }
   };
 
   if (!isValidProjectId || !isValidDesignId) {
