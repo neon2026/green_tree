@@ -33,8 +33,35 @@ describe("Rendering Generator", () => {
 
     expect(prompt.toLowerCase()).toContain("bar");
     expect(prompt.toLowerCase()).toContain("party k nightlife entertainment venue");
-    expect(prompt.toLowerCase()).toContain("rgb led");
+    expect(prompt.toLowerCase()).toContain("rgb strip lighting");
+    expect(prompt.toLowerCase()).toContain("under-counter rgb glow");
     expect(prompt).toContain("800");
+  });
+
+  it("should describe hall and private room rgb characteristics", () => {
+    const hallPrompt = generateRenderingPrompt({
+      styleTheme: "party_k",
+      colorScheme: "neon purple and cyan",
+      area: "seating",
+      machineCount: 48,
+      roomCount: 8,
+      totalArea: 1200,
+      rgbDensity: "medium",
+    });
+    const privateRoomPrompt = generateRenderingPrompt({
+      styleTheme: "party_k",
+      colorScheme: "neon purple and cyan",
+      area: "private_room",
+      machineCount: 48,
+      roomCount: 8,
+      totalArea: 1200,
+      rgbDensity: "medium",
+    });
+
+    expect(hallPrompt.toLowerCase()).toContain("open seating hall");
+    expect(hallPrompt.toLowerCase()).toContain("rgb ceiling strips");
+    expect(privateRoomPrompt.toLowerCase()).toContain("controllable rgb ambient lighting");
+    expect(privateRoomPrompt).toContain("8");
   });
 
   it("should generate svg placeholder images for failed areas", () => {

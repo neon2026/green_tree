@@ -49,14 +49,20 @@ export function generateRenderingPrompt(request: RenderingRequest): string {
     retro: "retro style, vintage elements, warm tones, classic",
   };
 
+  const rgbDensityDescription: Record<RenderingRequest["rgbDensity"], string> = {
+    low: "subtle RGB strip lighting with restrained accents",
+    medium: "balanced RGB strip lighting across key edges and focal walls",
+    high: "dense RGB strip lighting, immersive programmable glow, layered neon highlights",
+  };
+
   const areaDescriptions: Record<RenderingAreaType, string> = {
-    entrance: "party K entrance, neon sign facade, nightlife arrival moment, cyan and purple glow",
-    corridor: "party corridor area, reflective surfaces, directional light strips, immersive nightlife transition",
-    bar: "party bar counter area, bartender station, glossy materials, cocktail nightlife mood",
-    stage: "party stage area, karaoke performance focus, sound system, dramatic lighting beams",
-    seating: `open seating area, ${request.machineCount} entertainment seats, booth sofas, lively party lighting`,
-    private_room: `private KTV rooms, ${request.roomCount} themed booths, plush sofas, intimate party atmosphere`,
-    restroom: "restroom area, stylish hospitality finish, clean design, coordinated accent lighting",
+    entrance: "party K entrance, neon sign facade, signature arrival tunnel, programmable RGB light strips framing the doorway",
+    corridor: "party corridor area, reflective wall panels, directional RGB strip lighting, immersive nightlife transition",
+    bar: "party bar counter area, bartender station, bottle display wall, under-counter RGB glow, glossy countertop reflections",
+    stage: "party stage area, karaoke performance focus, sound system, dynamic beam lights, RGB screen backdrop",
+    seating: `open seating hall, ${request.machineCount} entertainment seats, booth sofas, RGB ceiling strips, social party atmosphere`,
+    private_room: `private KTV rooms, ${request.roomCount} themed booths, plush sofas, controllable RGB ambient lighting, intimate party atmosphere`,
+    restroom: "restroom area, stylish hospitality finish, coordinated mirror lighting, subtle RGB accents for brand consistency",
   };
 
   const unifiedStyle = `
@@ -65,7 +71,7 @@ Theme keyword: ${request.styleTheme}
 Style: ${styleDescriptions[request.styleTheme] || "modern nightlife entertainment interior"}
 Color scheme: ${request.colorScheme}
 Area focus: ${areaDescriptions[request.area] || ""}
-Lighting: RGB LED lights, neon purple and cyan accents, immersive party atmosphere
+Lighting: ${rgbDensityDescription[request.rgbDensity]}, neon purple and cyan accents, immersive party atmosphere
 Mood: trendy, energetic, premium, cohesive visual language across all areas
 Quality: high-quality 3D rendering, photorealistic, detailed, professional interior visualization
 Space: ${request.totalArea} square meters
