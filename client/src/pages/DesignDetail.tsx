@@ -427,18 +427,18 @@ export default function DesignDetail() {
           }
         })(),
         notes: [
-          "当前导出为施工说明 PDF，适用于方案评审、交付归档和施工前沟通。",
+          "当前导出为施工图 PDF，包含封面、平面布局示意、区域与机位配置表，适用于方案评审、交付归档和施工前沟通。",
           "DWG 结构化施工图仍保留为后续扩展入口，当前版本尚未生成 CAD 级别图纸。",
           "请结合当前效果图、预算报表与项目 CAD 参数一起审阅。",
         ],
       });
       pdf.save(buildConstructionPdfFileName(projectIdNum, designIdNum));
-      sonnerToast.success("施工说明 PDF 已导出", {
-        description: "当前版本先提供可下载的施工说明 PDF，DWG 图纸入口将继续保留为后续扩展能力。",
+      sonnerToast.success("施工图 PDF 已导出", {
+        description: "当前版本提供包含布局示意与区域配置表的施工图 PDF；DWG 图纸入口继续保留为后续扩展能力。",
       });
     } catch (error) {
       console.error(error);
-      sonnerToast.error("施工说明 PDF 导出失败", {
+      sonnerToast.error("施工图 PDF 导出失败", {
         description: "请稍后重试，或先使用交付包下载获取当前效果图与预算报表。",
       });
     } finally {
@@ -549,7 +549,7 @@ export default function DesignDetail() {
                 disabled={isDownloadingConstructionPdf}
               >
                 {isDownloadingConstructionPdf ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                {isDownloadingConstructionPdf ? "导出中..." : "导出施工说明 PDF"}
+                {isDownloadingConstructionPdf ? "导出中..." : "导出施工图 PDF"}
               </Button>
               <Button
                 variant="outline"
