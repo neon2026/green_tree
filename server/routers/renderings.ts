@@ -56,6 +56,23 @@ function normalizeStyleTheme(styleTheme?: string | null) {
     .join(" ");
 }
 
+function buildFallbackSummary(renderings: Array<{ isFallback?: boolean; fallbackReason?: string | null }>) {
+  const fallbackItems = renderings.filter((item) => item.isFallback);
+  if (fallbackItems.length === 0) {
+    return {
+      fallbackCount: 0,
+      warningMessage: null,
+    };
+  }
+
+  const primaryReason = fallbackItems.find((item) => item.fallbackReason)?.fallbackReason;
+  return {
+    fallbackCount: fallbackItems.length,
+    warningMessage:
+      primaryReason || `有 ${fallbackItems.length} 张效果图暂未生成真实图片，系统已自动展示占位图。`,
+  };
+}
+
 function normalizeRendering(record: {
   id?: number;
   designId?: number | null;
@@ -133,11 +150,14 @@ export const renderingsRouter = router({
             url: rendering.url,
             prompt: rendering.prompt,
             version: nextVersion,
+            isFallback: rendering.isFallback || false,
+            fallbackReason: rendering.fallbackReason || null,
           });
         }
 
         return {
           success: true,
+          ...buildFallbackSummary(savedRenderings),
           renderings: savedRenderings,
         };
       } catch (error) {
@@ -219,6 +239,8 @@ export const renderingsRouter = router({
 
         return {
           success: true,
+          fallbackCount: rendering.isFallback ? 1 : 0,
+          warningMessage: rendering.fallbackReason || null,
           rendering: {
             id: (result as any).insertId || 0,
             area: input.area,
@@ -226,6 +248,8 @@ export const renderingsRouter = router({
             url: rendering.url,
             prompt: rendering.prompt,
             version: nextVersion,
+            isFallback: rendering.isFallback || false,
+            fallbackReason: rendering.fallbackReason || null,
           },
         };
       } catch (error) {

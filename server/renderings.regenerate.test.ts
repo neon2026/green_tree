@@ -85,8 +85,12 @@ describe("renderings.regenerateArea", () => {
     });
 
     expect(result.success).toBe(true);
+    expect(result.fallbackCount).toBe(1);
+    expect(result.warningMessage).toContain("额度已用尽");
     expect(result.rendering.area).toBe("bar");
     expect(result.rendering.version).toBe(3);
+    expect(result.rendering.isFallback).toBe(true);
+    expect(result.rendering.fallbackReason).toContain("额度已用尽");
     expect(result.rendering.url.startsWith("data:image/svg+xml;base64,")).toBe(true);
     expect(createRenderingMock).toHaveBeenCalledWith(
       expect.objectContaining({

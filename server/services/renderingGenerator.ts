@@ -5,13 +5,13 @@
  */
 import { generateImage } from "../_core/imageGeneration";
 
-export type RenderingAreaType = 
-  | "entrance" 
-  | "corridor" 
-  | "bar" 
-  | "stage" 
-  | "seating" 
-  | "private_room" 
+export type RenderingAreaType =
+  | "entrance"
+  | "corridor"
+  | "bar"
+  | "stage"
+  | "seating"
+  | "private_room"
   | "restroom";
 
 export interface RenderingRequest {
@@ -22,6 +22,14 @@ export interface RenderingRequest {
   roomCount: number;
   totalArea: number;
   rgbDensity: "low" | "medium" | "high";
+}
+
+export interface RenderingResult {
+  url: string;
+  prompt: string;
+  area: string;
+  isFallback?: boolean;
+  fallbackReason?: string;
 }
 
 /**
@@ -51,7 +59,6 @@ export function generateRenderingPrompt(request: RenderingRequest): string {
     restroom: "restroom area, stylish hospitality finish, clean design, coordinated accent lighting",
   };
 
-  // Simplified unified prompt
   const unifiedStyle = `
 Professional interior design rendering of a Party K nightlife entertainment venue.
 Theme keyword: ${request.styleTheme}
@@ -67,15 +74,18 @@ Space: ${request.totalArea} square meters
   return unifiedStyle;
 }
 
+function normalizeFallbackReason(rawReason: string) {
+  if (rawReason.toLowerCase().includes("usage exhausted")) {
+    return "当前图像服务额度已用尽，系统已自动展示占位图。可稍后重试，或切换到其他可用图像服务后再生成真实效果图。";
+  }
+
+  return `当前图像服务暂时不可用，系统已自动展示占位图。原始原因：${rawReason}`;
+}
+
 /**
  * 生成效果图
  */
-export async function generateRendering(request: RenderingRequest): Promise<{
-  url: string;
-  prompt: string;
-  area: string;
-  isFallback?: boolean;
-}> {
+export async function generateRendering(request: RenderingRequest): Promise<RenderingResult> {
   const prompt = generateRenderingPrompt(request);
 
   try {
@@ -92,9 +102,13 @@ export async function generateRendering(request: RenderingRequest): Promise<{
       prompt,
       area: request.area,
       isFallback: !result.url,
+      fallbackReason: !result.url
+        ? "图像服务未返回有效图片地址，系统已自动展示占位图。"
+        : undefined,
     };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
+    const fallbackReason = normalizeFallbackReason(errorMsg);
     console.error(`[Rendering] Failed to generate rendering for area ${request.area}: ${errorMsg}`);
 
     return {
@@ -102,6 +116,7 @@ export async function generateRendering(request: RenderingRequest): Promise<{
       prompt,
       area: request.area,
       isFallback: true,
+      fallbackReason,
     };
   }
 }
@@ -121,8 +136,7 @@ export function generatePlaceholderImage(area: RenderingAreaType, theme: string)
   };
 
   const label = areaLabels[area] || area;
-  
-  // 创建SVG占位图
+
   const svg = `
     <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -141,16 +155,25 @@ export function generatePlaceholderImage(area: RenderingAreaType, theme: string)
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
-
 /**
  * 为设计方案生成所有区域的效果图
  */
-export async function generateDesignRenderings(designId: number, styleTheme: string, colorScheme: string, cadParams: any, rgbDensity: string = "medium"): Promise<Array<{
-  area: string;
-  label: string;
-  url: string;
-  prompt: string;
-}>> {
+export async function generateDesignRenderings(
+  designId: number,
+  styleTheme: string,
+  colorScheme: string,
+  cadParams: any,
+  rgbDensity: string = "medium"
+): Promise<
+  Array<{
+    area: string;
+    label: string;
+    url: string;
+    prompt: string;
+    isFallback?: boolean;
+    fallbackReason?: string;
+  }>
+> {
   const areas: RenderingAreaType[] = ["entrance", "corridor", "bar", "stage", "seating", "private_room", "restroom"];
   const areaLabels: Record<RenderingAreaType, string> = {
     entrance: "门头",
@@ -167,6 +190,8 @@ export async function generateDesignRenderings(designId: number, styleTheme: str
     label: string;
     url: string;
     prompt: string;
+    isFallback?: boolean;
+    fallbackReason?: string;
   }> = [];
 
   for (const area of areas) {
@@ -178,7 +203,7 @@ export async function generateDesignRenderings(designId: number, styleTheme: str
         machineCount: cadParams?.machineCount || 20,
         roomCount: cadParams?.roomCount || 5,
         totalArea: cadParams?.totalArea || 500,
-        rgbDensity: "high",
+        rgbDensity: (rgbDensity as "low" | "medium" | "high") || "high",
       };
 
       const rendering = await generateRendering(request);
@@ -187,6 +212,8 @@ export async function generateDesignRenderings(designId: number, styleTheme: str
         label: areaLabels[area],
         url: rendering.url,
         prompt: rendering.prompt,
+        isFallback: rendering.isFallback,
+        fallbackReason: rendering.fallbackReason,
       });
     } catch (error) {
       console.error(`[Rendering] Error generating ${area}:`, error);
@@ -195,6 +222,8 @@ export async function generateDesignRenderings(designId: number, styleTheme: str
         label: areaLabels[area],
         url: generatePlaceholderImage(area, styleTheme),
         prompt: "",
+        isFallback: true,
+        fallbackReason: "效果图生成过程中出现异常，系统已自动展示占位图。",
       });
     }
   }

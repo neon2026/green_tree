@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import { toast as sonnerToast } from "sonner";
 
 interface ChatMessage {
   id: string;
@@ -22,6 +23,8 @@ interface RenderingItem {
   version?: number;
   createdAt?: string | null;
   styleTheme?: string;
+  isFallback?: boolean;
+  fallbackReason?: string | null;
 }
 
 interface ViewerState {
@@ -65,6 +68,10 @@ function buildFallbackImage(label: string) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
+function isFallbackRendering(rendering?: Pick<RenderingItem, "url" | "isFallback">) {
+  return Boolean(rendering?.isFallback || rendering?.url?.startsWith("data:image/"));
+}
+
 export default function DesignDetail() {
   const { projectId, designId } = useParams<{ projectId: string; designId: string }>();
   const [, setLocation] = useLocation();
@@ -94,14 +101,35 @@ export default function DesignDetail() {
   );
 
   const generateRenderingsMutation = trpc.renderings.generate.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await utils.renderings.list.invalidate({ designId: designIdNum });
+      if (result.fallbackCount > 0) {
+        sonnerToast.warning("部分效果图暂未生成真实图片", {
+          description:
+            result.warningMessage || `本次有 ${result.fallbackCount} 张效果图因图像服务异常改为展示占位图。`,
+        });
+        return;
+      }
+
+      sonnerToast.success("效果图生成完成", {
+        description: "7 个区域的效果图已刷新到当前页面。",
+      });
     },
   });
 
   const regenerateAreaMutation = trpc.renderings.regenerateArea.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await utils.renderings.list.invalidate({ designId: designIdNum });
+      if (result.fallbackCount > 0) {
+        sonnerToast.warning("当前区域暂未生成真实图片", {
+          description: result.warningMessage || "系统已自动展示占位图，您可以稍后再次尝试重生成。",
+        });
+        return;
+      }
+
+      sonnerToast.success("单张效果图已更新", {
+        description: `${result.rendering.label} 已完成重生成。`,
+      });
     },
   });
 
@@ -113,6 +141,11 @@ export default function DesignDetail() {
   const historyRenderings = useMemo(
     () => ((renderingsQuery.data?.history || []) as RenderingItem[]),
     [renderingsQuery.data?.history]
+  );
+
+  const fallbackRenderings = useMemo(
+    () => currentRenderings.filter((rendering) => isFallbackRendering(rendering)),
+    [currentRenderings]
   );
 
   const viewerImage = viewer ? viewer.images[viewer.index] : null;
@@ -325,7 +358,22 @@ export default function DesignDetail() {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="current" className="mt-4">
+                <TabsContent value="current" className="mt-4 space-y-4">
+                  {fallbackRenderings.length > 0 && (
+                    <Card className="border-amber-500/40 bg-amber-500/10 p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="mt-0.5 h-5 w-5 text-amber-300" />
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-amber-100">
+                            当前有 {fallbackRenderings.length} 张效果图正在显示占位图。
+                          </p>
+                          <p className="text-sm text-amber-200/90">
+                            这通常表示图像服务暂时不可用或额度已用尽。您仍可继续查看布局与区域结果，稍后可对单张图片再次点击“单独重生成这张”获取真实出图。
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {currentRenderings.map((rendering, index) => (
                       <Card key={rendering.area} className="bg-slate-800 border-slate-700 overflow-hidden group">
@@ -355,6 +403,11 @@ export default function DesignDetail() {
                             <div>
                               <p className="text-white font-medium">{rendering.label}</p>
                               <p className="text-xs text-slate-400">{rendering.version ? `当前版本 V${rendering.version}` : "尚未生成"}</p>
+                              {isFallbackRendering(rendering) && (
+                                <p className="mt-1 text-xs text-amber-300">
+                                  当前显示占位图，稍后可重试生成真实图片。
+                                </p>
+                              )}
                             </div>
                             {rendering.url && (
                               <a
