@@ -4,6 +4,7 @@ import { AlertCircle, Download, History, Image as ImageIcon, Loader2, RotateCcw,
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { buildDeliveryPackageFileName, buildDeliveryPackageZip } from "@/lib/deliveryPackage";
 import { trpc } from "@/lib/trpc";
 import { toast as sonnerToast } from "sonner";
 
@@ -88,6 +89,7 @@ export default function DesignDetail() {
   const [activeTab, setActiveTab] = useState("current");
   const [viewer, setViewer] = useState<ViewerState | null>(null);
   const [regeneratingArea, setRegeneratingArea] = useState<string | null>(null);
+  const [isDownloadingPackage, setIsDownloadingPackage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: design } = trpc.designs.get.useQuery(
@@ -96,6 +98,10 @@ export default function DesignDetail() {
   );
 
   const renderingsQuery = trpc.renderings.list.useQuery(
+    { designId: designIdNum },
+    { enabled: isValidDesignId }
+  );
+  const budgetQuery = trpc.budget.calculate.useQuery(
     { designId: designIdNum },
     { enabled: isValidDesignId }
   );
@@ -207,6 +213,66 @@ export default function DesignDetail() {
     target.src = buildFallbackImage(label);
   };
 
+  const fileNameBase = useMemo(
+    () => buildDeliveryPackageFileName(design?.styleTheme, designIdNum),
+    [design?.styleTheme, designIdNum]
+  );
+
+  const fetchAsUint8Array = async (url: string) => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`下载资源失败：${response.status} ${response.statusText}`);
+    }
+    return new Uint8Array(await response.arrayBuffer());
+  };
+
+  const downloadBlob = (blob: Blob, fileName: string) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  };
+
+  const handleDownloadPackage = async () => {
+    if (!design) return;
+    setIsDownloadingPackage(true);
+    try {
+      const zip = await buildDeliveryPackageZip(
+        {
+          designId: designIdNum,
+          projectId: projectIdNum,
+          styleTheme: design.styleTheme || "设计方案",
+          budgetRange: design.budgetRange || "未指定",
+          renderings: currentRenderings.map((item) => ({
+            area: item.area,
+            label: item.label,
+            version: item.version || 1,
+            isFallback: isFallbackRendering(item),
+            url: item.url,
+          })),
+          budgetReport: budgetQuery.data?.report || "预算报表暂未生成",
+        },
+        fetchAsUint8Array
+      );
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      downloadBlob(blob, `${fileNameBase}-delivery-package.zip`);
+      sonnerToast.success("交付包已开始下载", {
+        description: "已包含当前效果图、预算报表与元数据说明。",
+      });
+    } catch (error) {
+      sonnerToast.error("交付包下载失败", {
+        description: error instanceof Error ? error.message : "请稍后重试。",
+      });
+    } finally {
+      setIsDownloadingPackage(false);
+    }
+  };
+
   const handleGenerateRenderings = async () => {
     if (!design) return;
     await generateRenderingsMutation.mutateAsync({ designId: designIdNum });
@@ -287,9 +353,14 @@ export default function DesignDetail() {
               <p className="text-slate-400 mt-1">设计方案详情与实时迭代</p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                <Download className="w-4 h-4 mr-2" />
-                下载交付包
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                onClick={handleDownloadPackage}
+                disabled={isDownloadingPackage || budgetQuery.isLoading || renderingsQuery.isLoading}
+              >
+                {isDownloadingPackage ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                {isDownloadingPackage ? "打包中..." : "下载交付包"}
               </Button>
               <Button
                 onClick={() => setLocation(`/projects/${projectIdNum}/designs`)}
