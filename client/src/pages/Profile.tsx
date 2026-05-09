@@ -179,12 +179,12 @@ export default function Profile() {
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                  <p className="text-slate-400">Open ID</p>
-                  <p className="mt-1 break-all font-mono text-slate-200">{user.openId}</p>
+                  <p className="text-slate-400">账号 ID</p>
+                  <p className="mt-1 break-all font-mono text-slate-200">{user.id}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                   <p className="text-slate-400">登录方式</p>
-                  <p className="mt-1 text-slate-200">{user.loginMethod || "Manus OAuth"}</p>
+                  <p className="mt-1 text-slate-200">{user.loginMethod || "email"}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                   <p className="text-slate-400">最近登录</p>
@@ -199,7 +199,7 @@ export default function Profile() {
               <ShieldCheck className="h-4 w-4 text-emerald-300" />
               <AlertTitle>资料修改说明</AlertTitle>
               <AlertDescription className="text-slate-300">
-                当前仅开放姓名与邮箱编辑，不影响 OAuth 身份绑定和角色权限。若后续需要头像、组织信息或偏好设置，可在此页面继续扩展。
+                当前仅开放姓名与邮箱编辑。若后续需要头像、组织信息或偏好设置，可在此页面继续扩展。
               </AlertDescription>
             </Alert>
           </div>

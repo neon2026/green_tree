@@ -2,7 +2,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Sparkles, Zap, Palette, BarChart3 } from "lucide-react";
-import { getLoginUrl } from "@/const";
 import { useEffect } from "react";
 
 export default function Home() {
@@ -28,7 +27,7 @@ export default function Home() {
             绿树电竞AI设计
           </div>
           <Button
-            onClick={() => window.location.href = getLoginUrl()}
+            onClick={() => setLocation("/login")}
             className="bg-emerald-500 hover:bg-emerald-600"
           >
             登录
@@ -60,7 +59,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Button
               size="lg"
-              onClick={() => window.location.href = getLoginUrl()}
+              onClick={() => setLocation("/login")}
               className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-8 py-6 text-lg"
             >
               立即开始 →
@@ -211,7 +210,7 @@ export default function Home() {
           </p>
           <Button
             size="lg"
-            onClick={() => window.location.href = getLoginUrl()}
+            onClick={() => setLocation("/login")}
             className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-8 py-6 text-lg"
           >
             立即登录 →
